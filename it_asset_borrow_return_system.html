@@ -1,0 +1,2675 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบยืม-คืนอุปกรณ์ไอที (IT Asset Borrow & Return)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+    * {
+      font-family: 'Prompt', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">ระบบยืม-คืนอุปกรณ์ไอที</h1>
+          <p class="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
+            <span id="connStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="connStatusText">โหมดทดลอง (Demo Mode พร้อมใช้งาน)</span>
+            <span class="text-slate-300">|</span>
+            <span id="lastSyncText" class="text-slate-500 font-medium">กำลังโหลดข้อมูล...</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-2">
+        <!-- Auto-Reload Interval Selector -->
+        <div class="hidden sm:flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-2 rounded-xl text-xs text-slate-600 transition" title="ตั้งเวลารีเฟรชข้อมูลอัตโนมัติ">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <select id="autoReloadSelect" onchange="changeAutoReloadInterval(this.value)" class="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer text-xs">
+            <option value="0">รีเฟรชเอง</option>
+            <option value="30">ทุก 30 วิ</option>
+            <option value="60" selected>ทุก 1 นาที</option>
+            <option value="300">ทุก 5 นาที</option>
+          </select>
+        </div>
+
+        <!-- Global Manual Refresh Button -->
+        <button id="btnGlobalReload" onclick="triggerManualReload()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 transition active:scale-95" title="รีเฟรชข้อมูลล่าสุด">
+          <svg id="reloadIcon" class="w-4 h-4 text-brand-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span class="hidden sm:inline">รีเฟรช</span>
+        </button>
+
+        <button onclick="openSetupModal()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span class="hidden sm:inline">เชื่อมต่อ Google Sheets</span>
+          <span class="sm:hidden">ตั้งค่า</span>
+        </button>
+        <button onclick="openAddItemModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-sm flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>เพิ่มอุปกรณ์</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification Alert Box -->
+  <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+    
+    <!-- Top Statistics Dashboard -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">อุปกรณ์ทั้งหมด</p>
+          <p id="statTotalItems" class="text-2xl font-bold text-slate-900 mt-0.5">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">พร้อมให้ยืม</p>
+          <p id="statAvailableItems" class="text-2xl font-bold text-emerald-600 mt-0.5">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">กำลังถูกยืม</p>
+          <p id="statBorrowedItems" class="text-2xl font-bold text-amber-600 mt-0.5">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500">เกินกำหนดส่ง</p>
+          <p id="statOverdueItems" class="text-2xl font-bold text-rose-600 mt-0.5">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <div class="flex overflow-x-auto pb-2 gap-2 border-b border-slate-200 mb-6">
+      <button onclick="switchTab('borrowTab')" id="tabBtn-borrowTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-brand-600 text-white shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <span>แบบฟอร์มยืมอุปกรณ์</span>
+      </button>
+
+      <button onclick="switchTab('returnTab')" id="tabBtn-returnTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition text-slate-600 hover:bg-slate-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        <span>รายการรอรับคืน</span>
+        <span id="tabBadgeReturns" class="px-1.5 py-0.5 text-[10px] rounded-full bg-slate-200 text-slate-700 font-semibold">0</span>
+      </button>
+
+      <button onclick="switchTab('inventoryTab')" id="tabBtn-inventoryTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition text-slate-600 hover:bg-slate-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        <span>คลังอุปกรณ์</span>
+      </button>
+
+      <button onclick="switchTab('historyTab')" id="tabBtn-historyTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition text-slate-600 hover:bg-slate-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>ประวัติการทำรายการ</span>
+        <span id="tabBadgeHistory" class="px-1.5 py-0.5 text-[10px] rounded-full bg-slate-200 text-slate-700 font-semibold">0</span>
+      </button>
+
+      <button onclick="switchTab('aiAssistantTab')" id="tabBtn-aiAssistantTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition text-purple-700 bg-purple-50 hover:bg-purple-100">
+        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span>Gemini AI Assistant</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: BORROW FORM -->
+    <div id="tabContent-borrowTab" class="tab-content">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Form -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">บันทึกการขอยืมอุปกรณ์</h2>
+              <p class="text-xs text-slate-500">กรอกข้อมูลผู้ยืมและเลือกอุปกรณ์ที่ต้องการ (ยืมได้พร้อมกันหลายชิ้น)</p>
+            </div>
+            <button type="button" onclick="openAiRecommenderQuick()" class="text-xs text-purple-600 font-semibold bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl flex items-center gap-1 transition">
+              <span>✨ ให้ AI ช่วยเลือกอุปกรณ์</span>
+            </button>
+          </div>
+
+          <form id="borrowForm" onsubmit="handleBorrowSubmit(event)" class="space-y-4">
+            <!-- Multi-Item Selection Area -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  1. เลือกอุปกรณ์ที่พร้อมใช้งาน <span class="text-rose-500">*</span>
+                </label>
+                <span id="selectedItemsCountBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  เลือกแล้ว 0 ชิ้น
+                </span>
+              </div>
+
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <select id="borrowItemId" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition">
+                    <option value="">-- กำลังโหลดรายการอุปกรณ์... --</option>
+                  </select>
+                </div>
+                <button type="button" onclick="handleAddSelectedItemFromDropdown()" class="px-4 py-2.5 bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shrink-0 active:scale-95">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  <span>เพิ่มลงรายการ</span>
+                </button>
+              </div>
+
+              <!-- Selected Items Cart Container -->
+              <div class="mt-3 p-3 bg-slate-50/90 rounded-xl border border-slate-200 min-h-[85px]">
+                <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200/60 text-[11px] text-slate-500">
+                  <span>รายการอุปกรณ์ที่จะขอยืมในรอบนี้ (คลิกอุปกรณ์ด้านขวาเพื่อเลือกเพิ่มได้):</span>
+                  <button type="button" onclick="clearSelectedBorrowItems()" class="text-rose-500 hover:text-rose-700 font-medium hover:underline text-xs">ล้างทั้งหมด</button>
+                </div>
+                <div id="selectedItemsContainer" class="flex flex-wrap gap-2">
+                  <!-- Dynamically populated selected items -->
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="borrowerName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  2. ชื่อ-นามสกุล ผู้ยืม <span class="text-rose-500">*</span>
+                </label>
+                <input type="text" id="borrowerName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+              </div>
+
+              <div>
+                <label for="borrowerDept" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  3. แผนก / สังกัด <span class="text-rose-500">*</span>
+                </label>
+                <input type="text" id="borrowerDept" required placeholder="เช่น IT Support, การตลาด" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="borrowerContact" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  4. เบอร์โทรศัพท์ หรือ LINE ID <span class="text-rose-500">*</span>
+                </label>
+                <input type="text" id="borrowerContact" required placeholder="เช่น 081-234-5678" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+              </div>
+
+              <div>
+                <label for="expectedReturnDate" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  5. กำหนดวันที่ส่งคืน <span class="text-rose-500">*</span>
+                </label>
+                <input type="date" id="expectedReturnDate" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+              </div>
+            </div>
+
+            <div>
+              <label for="borrowPurpose" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                6. วัตถุประสงค์ในการยืม / สถานที่ใช้งาน
+              </label>
+              <textarea id="borrowPurpose" rows="2" placeholder="เช่น นำไปใช้ออกบูธสัมมนาภายนอก, ปฏิบัติงาน WFH ชั่วคราว" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"></textarea>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+              <button type="reset" onclick="clearSelectedBorrowItems()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+                ล้างข้อมูล
+              </button>
+              <button type="submit" id="btnSubmitBorrow" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-sm flex items-center gap-2 transition">
+                <span id="btnBorrowSpinner" class="hidden animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                <span id="btnBorrowText">ยืนยันการยืมอุปกรณ์ (0 ชิ้น)</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Available Hardware List Quick Peek -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 flex flex-col">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <h3 class="font-bold text-slate-900 text-sm">อุปกรณ์ที่ว่างพร้อมยืม</h3>
+            <span id="quickAvailableCount" class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">0 ชิ้น</span>
+          </div>
+          <div id="quickAvailableContainer" class="flex-1 overflow-y-auto max-h-[380px] space-y-2 pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: ACTIVE BORROWS (RETURN TAB) -->
+    <div id="tabContent-returnTab" class="tab-content hidden">
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">รายการอุปกรณ์ที่กำลังถูกยืม (รอรับคืน)</h2>
+            <p class="text-xs text-slate-500">ตรวจสอบสภาพและกดปุ่มรับคืนเมื่อได้รับอุปกรณ์เรียบร้อยแล้ว (สามารถเลือกรับคืนพร้อมกันหลายรายการได้)</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="searchReturnInput" onkeyup="filterActiveBorrows()" placeholder="ค้นหารหัส, ชื่อผู้ยืม..." class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชข้อมูลรายการยืม">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Return Action Bar -->
+        <div id="bulkReturnBar" class="hidden mb-4 p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex flex-wrap items-center justify-between gap-3 transition-all animate-fadeIn">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="bulkReturnCountText" class="text-xs font-bold text-emerald-900">เลือกแล้ว 0 รายการ</span>
+            <span class="text-xs text-emerald-600">พร้อมดำเนินการรับคืนเข้าสต็อก</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="clearReturnSelections()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white rounded-lg transition">
+              ยกเลิกการเลือก
+            </button>
+            <button type="button" id="btnExecuteBulkReturn" onclick="requestBulkReturn()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span id="bulkReturnBtnLabel">รับคืนอุปกรณ์ที่เลือก</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="text-xs uppercase text-slate-500 bg-slate-50 border-y border-slate-100">
+                <th class="py-3 px-3 w-10 text-center">
+                  <input type="checkbox" id="selectAllReturns" onchange="toggleSelectAllReturns(this.checked)" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer" title="เลือกทั้งหมด">
+                </th>
+                <th class="py-3 px-4 font-semibold">รหัสธุรกรรม</th>
+                <th class="py-3 px-4 font-semibold">อุปกรณ์</th>
+                <th class="py-3 px-4 font-semibold">ผู้ยืม / แผนก</th>
+                <th class="py-3 px-4 font-semibold">วันที่ยืม</th>
+                <th class="py-3 px-4 font-semibold">กำหนดคืน</th>
+                <th class="py-3 px-4 font-semibold text-center">สถานะ</th>
+                <th class="py-3 px-4 font-semibold text-right">ดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody id="returnTableBody" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: INVENTORY LIST -->
+    <div id="tabContent-inventoryTab" class="tab-content hidden">
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">ทะเบียนอุปกรณ์ทั้งหมด</h2>
+            <p class="text-xs text-slate-500">ตรวจสอบสต็อก อุปกรณ์ว่าง และสถานะของอุปกรณ์แต่ละชิ้น</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="filterStatus" onchange="filterInventory()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white">
+              <option value="">ทุกสถานะ</option>
+              <option value="Available">พร้อมใช้งาน</option>
+              <option value="Borrowed">กำลังถูกยืม</option>
+              <option value="Maintenance">ซ่อมบำรุง</option>
+            </select>
+            <select id="filterCategory" onchange="filterInventory()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white">
+              <option value="">ทุกหมวดหมู่</option>
+            </select>
+            <input type="text" id="searchInventoryInput" onkeyup="filterInventory()" placeholder="ค้นหาชื่อ, S/N..." class="px-3 py-1.5 text-xs rounded-xl border border-slate-300">
+            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชข้อมูลทะเบียนอุปกรณ์">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="text-xs uppercase text-slate-500 bg-slate-50 border-y border-slate-100">
+                <th class="py-3 px-4 font-semibold">รหัสอุปกรณ์</th>
+                <th class="py-3 px-4 font-semibold">ชื่ออุปกรณ์</th>
+                <th class="py-3 px-4 font-semibold">หมวดหมู่</th>
+                <th class="py-3 px-4 font-semibold">Serial Number</th>
+                <th class="py-3 px-4 font-semibold text-center">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: TRANSACTION HISTORY -->
+    <div id="tabContent-historyTab" class="tab-content hidden">
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">ประวัติบันทึกการยืม-คืนทั้งหมด</h2>
+            <p class="text-xs text-slate-500">บันทึกประวัติการทำรายการจาก Logs ทั้งหมด สามารถตรวจสอบย้อนหลังและส่งออกข้อมูลได้</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="filterHistoryStatus" onchange="filterHistory()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white">
+              <option value="">สถานะทั้งหมด</option>
+              <option value="Borrowed">กำลังยืม (ยังไม่คืน)</option>
+              <option value="Returned">คืนแล้วเรียบร้อย</option>
+            </select>
+            <input type="text" id="searchHistoryInput" onkeyup="filterHistory()" placeholder="ค้นหารหัส, ผู้ยืม, อุปกรณ์..." class="px-3 py-1.5 text-xs rounded-xl border border-slate-300">
+            <button onclick="exportHistoryCsv()" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 transition" title="ดาวน์โหลดเป็นไฟล์ CSV สำหรับเปิดใน Excel">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>ส่งออก CSV</span>
+            </button>
+            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชประวัติ">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="text-xs uppercase text-slate-500 bg-slate-50 border-y border-slate-100">
+                <th class="py-3 px-4 font-semibold">รหัสธุรกรรม</th>
+                <th class="py-3 px-4 font-semibold">อุปกรณ์</th>
+                <th class="py-3 px-4 font-semibold">ผู้ยืม / แผนก</th>
+                <th class="py-3 px-4 font-semibold">วันที่ยืม</th>
+                <th class="py-3 px-4 font-semibold">กำหนดคืน</th>
+                <th class="py-3 px-4 font-semibold">วันที่คืนจริง</th>
+                <th class="py-3 px-4 font-semibold text-center">สถานะ</th>
+                <th class="py-3 px-4 font-semibold">หมายเหตุ / การตรวจสภาพ</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: GEMINI AI ASSISTANT -->
+    <div id="tabContent-aiAssistantTab" class="tab-content hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- AI Recommender Card -->
+        <div class="bg-white rounded-2xl border border-purple-100 shadow-sm p-6 relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-purple-100/50 rounded-full blur-2xl pointer-events-none"></div>
+          
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">AI</span>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">Smart Equipment Matcher</h3>
+              <p class="text-[11px] text-slate-500">วิเคราะห์งานแล้วจับคู่อุปกรณ์ที่ว่างให้อัตโนมัติด้วย Gemini</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-600 mb-3">ระบุลักษณะงาน เช่น <em>"ต้องการจัดห้องประชุม Hybrid มีคนมาร่วม 30 คน ต้องต่อจอใหญ่และไมค์ดึงเสียง"</em></p>
+
+          <textarea id="aiWorkPrompt" rows="3" placeholder="พิมพ์อธิบายงานที่ต้องการนำอุปกรณ์ไปใช้..." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none mb-3"></textarea>
+
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex gap-1 flex-wrap">
+              <button onclick="setAiPromptExample('จัดสัมมนา Hybrid Meeting นอกสถานที่')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">สัมมนา Hybrid</button>
+              <button onclick="setAiPromptExample('ออกบูธจัดนิทรรศการ 2 วัน')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">ออกบูธ</button>
+              <button onclick="setAiPromptExample('งานตัดต่อคลิปวิดีโอ WFH ชั่วคราว')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">งานกราฟิก/ตัดต่อ</button>
+            </div>
+            <button id="aiRecommendBtn" onclick="runAiEquipmentRecommendation()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition shrink-0">
+              <span id="aiRecommendSpinner" class="hidden animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+              <span>วิเคราะห์อุปกรณ์</span>
+            </button>
+          </div>
+
+          <!-- AI Recommendation Output -->
+          <div id="aiRecommendResult" class="mt-4 p-3 bg-purple-50/70 border border-purple-200/60 rounded-xl text-xs space-y-2 hidden">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- AI Overdue Follow-up Drafter -->
+        <div class="bg-white rounded-2xl border border-indigo-100 shadow-sm p-6 relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-100/50 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">AI</span>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">Smart Overdue Reminder</h3>
+              <p class="text-[11px] text-slate-500">ร่างข้อความทวงถาม/ติดตามอุปกรณ์ส่งคืนตามความสุภาพ</p>
+            </div>
+          </div>
+
+          <label class="block text-xs font-semibold text-slate-700 mb-1">เลือกรายการที่ต้องการติดตาม:</label>
+          <select id="aiBorrowSelect" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs mb-3 bg-white">
+            <option value="">-- กำลังโหลดรายการยืม... --</option>
+          </select>
+
+          <label class="block text-xs font-semibold text-slate-700 mb-1">โทนเสียงของข้อความ:</label>
+          <div class="flex gap-2 mb-4 flex-wrap">
+            <label class="flex items-center gap-1 text-xs text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
+              <input type="radio" name="aiTone" value="friendly" checked class="text-indigo-600"> เป็นกันเอง / สุภาพ
+            </label>
+            <label class="flex items-center gap-1 text-xs text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
+              <input type="radio" name="aiTone" value="official" class="text-indigo-600"> ทางการมาตรฐาน
+            </label>
+            <label class="flex items-center gap-1 text-xs text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
+              <input type="radio" name="aiTone" value="urgent" class="text-indigo-600"> เร่งด่วน / เกินกำหนด
+            </label>
+          </div>
+
+          <button id="aiDraftReminderBtn" onclick="runAiDraftReminder()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+            <span id="aiDraftSpinner" class="hidden animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+            <span>ร่างข้อความติดตามผ่าน LINE / Email</span>
+          </button>
+
+          <div id="aiReminderResult" class="mt-4 p-3 bg-indigo-50/70 border border-indigo-200/60 rounded-xl text-xs space-y-2 hidden">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL 1: Add New Asset -->
+  <div id="addItemModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h3 class="font-bold text-slate-900">เพิ่มอุปกรณ์ใหม่เข้าสู่คลัง</h3>
+        <button onclick="closeAddItemModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <form id="addItemForm" onsubmit="handleAddNewItem(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสอุปกรณ์ (Item ID) *</label>
+          <input type="text" id="newItemId" required placeholder="เช่น IT-009" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่ออุปกรณ์ *</label>
+          <input type="text" id="newItemName" required placeholder="เช่น iPad Pro 11-inch M2" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่ (ดึงจากชีต) *</label>
+          <select id="newItemCategory" required onchange="handleCategorySelectionChange(this.value)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white">
+            <option value="">-- กำลังโหลดหมวดหมู่จากชีต... --</option>
+          </select>
+          <input type="text" id="newItemCustomCategory" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่ที่ต้องการเพิ่ม..." class="hidden w-full mt-2 px-3 py-2 rounded-xl border border-purple-300 bg-purple-50/50 text-xs text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Serial Number</label>
+          <input type="text" id="newItemSerial" placeholder="เช่น SN-8923412" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs">
+        </div>
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+          <button type="button" onclick="closeAddItemModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">ยกเลิก</button>
+          <button type="submit" id="btnAddItemSubmit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white">บันทึกอุปกรณ์</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Google Sheets Setup & Code.gs Copy Dialog -->
+  <div id="setupModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">GS</div>
+          <div>
+            <h3 class="font-bold text-slate-900">ตั้งค่าเชื่อมต่อ Google Sheets & Apps Script</h3>
+            <p class="text-[11px] text-slate-500">ระบบ Self-Healing ป้องกัน Error `null.getDataRange` อัตโนมัติ</p>
+          </div>
+        </div>
+        <button onclick="closeSetupModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-700">
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">1. ใส่ Web App URL ของคุณที่ได้จากการ Deploy:</label>
+          <div class="flex gap-2">
+            <input type="url" id="inputWebAppUrl" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs">
+            <button onclick="saveWebAppUrl()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold">บันทึก URL</button>
+            <button onclick="resetToDemoMode()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold">ใช้ Demo</button>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800">
+          💡 <strong>สร้างแท็บอัตโนมัติ!</strong> เมื่อรันครั้งแรก โค้ด Apps Script ด้านล่างจะสร้างแท็บ <code>Items</code>, <code>Logs</code> และ <code>Categories</code> พร้อมตั้งค่าหัวตารางและซ่อมแซมสถานะให้เองอย่างแม่นยำ
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-bold text-slate-800">2. คัดลอกโค้ดนี้ไปวางใน Apps Script (Code.gs):</span>
+            <button onclick="copyGasCode()" class="text-brand-600 font-semibold hover:underline flex items-center gap-1">
+              <span>คัดลอกโค้ดทั้งหมด</span>
+            </button>
+          </div>
+          <pre id="gasCodeBlock" class="p-3 bg-slate-900 text-slate-100 rounded-xl text-[11px] font-mono overflow-x-auto max-h-60 leading-relaxed"></pre>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1 text-[11px]">
+          <p class="font-bold text-slate-800">วิธี Deploy ใน Google Apps Script:</p>
+          <p>1. เปิด Google Sheet > ไปที่ <strong>ส่วนขยาย (Extensions)</strong> > <strong>Apps Script</strong></p>
+          <p>2. ลบโค้ดเดิม วางโค้ดที่คัดลอกนี้ลงไป แล้วกดปุ่ม <strong>บันทึก (Ctrl + S)</strong></p>
+          <p>3. คลิกปุ่ม <strong>Deploy (ทำให้ใช้งานได้)</strong> > เลือก <strong>New deployment</strong></p>
+          <p class="text-rose-600 font-semibold bg-rose-50 p-1.5 rounded-lg border border-rose-200">
+            ⚠️ สำคัญที่สุด: Execute as เลือก "Me" และ Who has access ต้องเลือก "Anyone (ทุกคน)" เท่านั้น มิฉะนั้นจะเกิด Error 401 Unauthorized / CORS
+          </p>
+          <p>4. คัดลอก Web app URL ที่ลงท้ายด้วย <code>/exec</code> มาวางในช่องด้านบนแล้วกด "บันทึก URL"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Gemini Vision Inspection on Return -->
+  <div id="aiInspectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">AI</div>
+          <div>
+            <h3 class="font-bold text-slate-900">ตรวจสภาพอุปกรณ์ด้วยภาพถ่าย</h3>
+            <p id="inspectDeviceName" class="text-[11px] text-slate-500 font-medium">อุปกรณ์: -</p>
+          </div>
+        </div>
+        <button onclick="closeAiInspectModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <p id="inspectBorrowerName" class="text-xs text-slate-600 font-medium">ผู้ยืม: -</p>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ถ่ายภาพหรืออัปโหลดรูปสภาพเครื่องจริง:</label>
+          <input type="file" id="inspectPhotoInput" accept="image/*" onchange="handleInspectPhotoSelected(event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+        </div>
+
+        <div id="inspectPhotoPreviewContainer" class="hidden">
+          <img id="inspectPhotoPreview" class="w-full h-44 object-cover rounded-xl border border-slate-200" alt="Preview">
+        </div>
+
+        <button id="btnRunAiInspect" onclick="runAiImageInspection()" disabled class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+          <span id="inspectSpinner" class="hidden animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+          <span id="inspectBtnText">สแกนและวิเคราะห์สภาพด้วย Gemini</span>
+        </button>
+
+        <div id="inspectResultContainer" class="p-3 bg-purple-50/80 border border-purple-200 rounded-xl text-xs space-y-1.5 hidden">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-purple-900">ผลการวิเคราะห์สภาพ:</span>
+            <span id="inspectGradeBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-200 text-purple-800">เกรด A</span>
+          </div>
+          <p id="inspectAnalysisText" class="text-slate-700 text-xs leading-relaxed"></p>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+          <button type="button" onclick="closeAiInspectModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">ปิด</button>
+          <button type="button" onclick="confirmReturnWithAiNotes()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+            ยืนยันรับคืนพร้อมบันทึก
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Custom Return Confirmation Modal -->
+  <div id="returnConfirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl border border-slate-100 text-center">
+      <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h3 class="font-bold text-slate-900 text-base mb-1">ยืนยันการรับคืนอุปกรณ์</h3>
+      <div id="returnConfirmMessage" class="text-xs text-slate-600 mb-5 leading-relaxed">ยืนยันรับคืนอุปกรณ์รายการนี้เรียบร้อยแล้วหรือไม่?</div>
+      
+      <div class="flex justify-center gap-2">
+        <button type="button" onclick="closeReturnConfirmModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+          ยกเลิก
+        </button>
+        <button type="button" id="btnConfirmReturnAction" class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+          ยืนยันรับคืน
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+     * APPLICATION STATE & CONFIGURATION
+     * ========================================================= */
+    const STORAGE_KEY_URL = "it_asset_webapp_url";
+    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxypntnPBTPthGdfnCVj5bL6zAIQSAsNqzQ7LMsRlo5wMiTRUmug3mSJXUWNiRHQ4pE/exec";
+
+    const storedUrl = localStorage.getItem(STORAGE_KEY_URL);
+    const initialUrl = (storedUrl === "DEMO") ? "" : (storedUrl || DEFAULT_WEB_APP_URL);
+
+    // Application reactive state
+    const state = {
+      webAppUrl: initialUrl,
+      isLive: !!initialUrl,
+      items: [],
+      activeBorrows: [],
+      allLogs: [],
+      categories: [],
+      selectedBorrowItems: [],
+      selectedReturnTransIds: [],
+      isRefreshing: false,
+      autoReloadTimer: null
+    };
+
+    const INITIAL_DEMO_CATEGORIES = [
+      "Laptop",
+      "Monitor",
+      "Projector",
+      "Adapter",
+      "Audio",
+      "Tablet",
+      "Other"
+    ];
+
+    function getOffsetDate(daysOffset) {
+      const d = new Date();
+      d.setDate(d.getDate() + daysOffset);
+      return d.toISOString().split("T")[0];
+    }
+
+    function isItemBorrowed(item) {
+      if (!item) return false;
+      const itemId = String(item.item_id || item).trim().toLowerCase();
+      const hasActive = state.activeBorrows.some(b => String(b.item_id || "").trim().toLowerCase() === itemId);
+      if (hasActive) return true;
+      const s = String(item.status || "").trim().toLowerCase();
+      return s === "borrowed" || s === "กำลังถูกยืม" || s === "กำลังยืม" || s === "ยืม" || s === "ถูกยืม";
+    }
+
+    function isItemAvailable(item) {
+      if (!item) return false;
+      if (isItemBorrowed(item)) return false;
+      const s = String(item.status || "").trim().toLowerCase();
+      if (s === "maintenance" || s === "ซ่อมบำรุง" || s === "ส่งซ่อม" || s === "ชำรุด") return false;
+      return true;
+    }
+
+    function syncItemStatuses() {
+      state.items.forEach(item => {
+        if (isItemBorrowed(item)) {
+          item.status = "Borrowed";
+        } else if (item.status !== "Maintenance" && item.status !== "ซ่อมบำรุง") {
+          item.status = "Available";
+        }
+      });
+    }
+
+    const INITIAL_DEMO_ITEMS = [
+      { item_id: "IT-001", item_name: "Dell Latitude 5430 (i7/16GB)", category: "Laptop", serial_number: "DL-5430-891", status: "Available" },
+      { item_id: "IT-002", item_name: "MacBook Air M2 (16GB/512GB)", category: "Laptop", serial_number: "MBA-M2-044", status: "Borrowed" },
+      { item_id: "IT-003", item_name: "Epson EB-X06 Projector 3600lm", category: "Projector", serial_number: "EP-X06-203", status: "Available" },
+      { item_id: "IT-004", item_name: "Dell UltraSharp 27-inch 4K", category: "Monitor", serial_number: "DELL-U27-91", status: "Available" },
+      { item_id: "IT-005", item_name: "Rode Wireless GO II Dual Mic", category: "Audio", serial_number: "RODE-WGO-88", status: "Borrowed" },
+      { item_id: "IT-006", item_name: "USB-C Multiport Hub 8-in-1", category: "Adapter", serial_number: "HUB-8IN1-12", status: "Available" }
+    ];
+
+    function getInitialDemoBorrows() {
+      return [
+        { trans_id: "TRX-1001", item_id: "IT-002", borrower_name: "กิตติศักดิ์ พัฒนพงศ์", borrower_dept: "Marketing", borrow_date: getOffsetDate(-6), expected_return: getOffsetDate(-2) },
+        { trans_id: "TRX-1002", item_id: "IT-005", borrower_name: "สุวิมล แสงทอง", borrower_dept: "HR & Training", borrow_date: getOffsetDate(-1), expected_return: getOffsetDate(4) }
+      ];
+    }
+
+    function getInitialDemoLogs() {
+      const borrows = getInitialDemoBorrows();
+      return [
+        { trans_id: borrows[0].trans_id, timestamp: borrows[0].borrow_date + " 09:30", item_id: borrows[0].item_id, borrower_name: borrows[0].borrower_name, borrower_dept: borrows[0].borrower_dept, borrower_contact: "081-111-2222", borrow_date: borrows[0].borrow_date, expected_return: borrows[0].expected_return, actual_return: "", trans_status: "Borrowed", notes: "งานนำเสนอแผนงานประจำปี" },
+        { trans_id: borrows[1].trans_id, timestamp: borrows[1].borrow_date + " 14:15", item_id: borrows[1].item_id, borrower_name: borrows[1].borrower_name, borrower_dept: borrows[1].borrower_dept, borrower_contact: "089-333-4444", borrow_date: borrows[1].borrow_date, expected_return: borrows[1].expected_return, actual_return: "", trans_status: "Borrowed", notes: "บันทึกเสียงอบรมพนักงานใหม่" },
+        { trans_id: "TRX-0985", timestamp: getOffsetDate(-14) + " 10:00", item_id: "IT-001", borrower_name: "วิชัย สมบูรณ์", borrower_dept: "IT Support", borrower_contact: "082-555-6666", borrow_date: getOffsetDate(-14), expected_return: getOffsetDate(-10), actual_return: getOffsetDate(-10) + " 16:30", trans_status: "Returned", notes: "คืน: สภาพสมบูรณ์พร้อมสายชาร์จแท้" },
+        { trans_id: "TRX-0972", timestamp: getOffsetDate(-20) + " 13:20", item_id: "IT-003", borrower_name: "ดนัย ภักดี", borrower_dept: "Sales", borrower_contact: "086-777-8888", borrow_date: getOffsetDate(-20), expected_return: getOffsetDate(-18), actual_return: getOffsetDate(-18) + " 17:00", trans_status: "Returned", notes: "คืน: อุปกรณ์ทำงานปกติ ไม่มีรอย" }
+      ];
+    }
+
+    /* Central API Router */
+    async function callAPI(action, payload = {}) {
+      if (state.webAppUrl && state.webAppUrl.trim() !== "") {
+        try {
+          const response = await fetch(state.webAppUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action, ...payload })
+          });
+
+          if (response.status === 401 || response.status === 403) {
+            throw new Error("AUTH_401");
+          }
+
+          if (!response.ok) {
+            throw new Error(`HTTP Error ${response.status}`);
+          }
+
+          const resJson = await response.json();
+          return resJson;
+        } catch (err) {
+          console.warn("GAS Connection failed, fallback to local simulator:", err);
+          if (err.message === "AUTH_401" || String(err).includes("Failed to fetch")) {
+            showNotification(
+              "⚠️ สิทธิ์เข้าถึงไม่ถูกต้อง (Error 401 / CORS): ใน Apps Script ตอน Deploy ต้องตั้งค่า 'Who has access' เป็น 'Anyone (ทุกคน)'",
+              "error"
+            );
+          } else {
+            showNotification("เชื่อมต่อ Apps Script ขัดข้อง สลับใช้งานโหมดจำลองชั่วคราว", "warning");
+          }
+        }
+      }
+
+      return simulateBackend(action, payload);
+    }
+
+    function simulateBackend(action, data) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          switch (action) {
+            case "getInitialData": {
+              syncItemStatuses();
+              resolve({
+                status: "success",
+                items: [...state.items],
+                activeBorrows: [...state.activeBorrows],
+                allLogs: [...state.allLogs],
+                categories: [...state.categories]
+              });
+              break;
+            }
+            case "borrowItem": {
+              const ids = Array.isArray(data.itemIds) && data.itemIds.length > 0 
+                ? data.itemIds 
+                : (data.itemId ? [data.itemId] : []);
+
+              if (ids.length === 0) {
+                resolve({ status: "error", message: "กรุณาเลือกอุปกรณ์ที่ต้องการยืมอย่างน้อย 1 ชิ้น" });
+                return;
+              }
+
+              const itemsToBorrow = [];
+              for (const tid of ids) {
+                const item = state.items.find(i => String(i.item_id).trim().toLowerCase() === String(tid).trim().toLowerCase());
+                if (!item || !isItemAvailable(item)) {
+                  resolve({ status: "error", message: `อุปกรณ์ [${tid}] ไม่พร้อมให้ยืม หรือกำลังถูกยืมอยู่` });
+                  return;
+                }
+                itemsToBorrow.push(item);
+              }
+
+              const batchPrefix = "TRX-" + Math.floor(1000 + Math.random() * 9000);
+              const nowFormatted = new Date().toISOString().replace("T", " ").substring(0, 16);
+
+              itemsToBorrow.forEach((item, index) => {
+                item.status = "Borrowed";
+                const transId = itemsToBorrow.length > 1 ? `${batchPrefix}-${index + 1}` : batchPrefix;
+                const newBorrow = {
+                  trans_id: transId,
+                  item_id: item.item_id,
+                  borrower_name: data.borrowerName,
+                  borrower_dept: data.dept,
+                  borrow_date: data.borrowDate,
+                  expected_return: data.expectedReturn
+                };
+                state.activeBorrows.push(newBorrow);
+
+                state.allLogs.unshift({
+                  ...newBorrow,
+                  timestamp: nowFormatted,
+                  borrower_contact: data.contact || "-",
+                  actual_return: "",
+                  trans_status: "Borrowed",
+                  notes: data.notes || ""
+                });
+              });
+
+              syncItemStatuses();
+              resolve({ 
+                status: "success", 
+                message: `บันทึกการยืมสำเร็จ ${itemsToBorrow.length} รายการ (รหัสกลุ่ม: ${batchPrefix})` 
+              });
+              break;
+            }
+            case "returnItem": {
+              const targetTransList = Array.isArray(data.transIds) && data.transIds.length > 0
+                ? data.transIds
+                : (data.transId ? [data.transId] : []);
+
+              if (targetTransList.length === 0) {
+                resolve({ status: "error", message: "กรุณาเลือกรายการที่ต้องการรับคืนอย่างน้อย 1 รายการ" });
+                return;
+              }
+
+              const nowFormatted = new Date().toISOString().replace("T", " ").substring(0, 16);
+              let returnedCount = 0;
+
+              targetTransList.forEach(rawId => {
+                const searchId = String(rawId || "").trim().toLowerCase();
+                const bIndex = state.activeBorrows.findIndex(b => String(b.trans_id).trim().toLowerCase() === searchId);
+                if (bIndex !== -1) {
+                  const borrowed = state.activeBorrows[bIndex];
+                  const item = state.items.find(i => String(i.item_id).trim().toLowerCase() === String(borrowed.item_id).trim().toLowerCase());
+                  if (item) item.status = "Available";
+                  state.activeBorrows.splice(bIndex, 1);
+                  returnedCount++;
+
+                  const logEntry = state.allLogs.find(l => String(l.trans_id).trim().toLowerCase() === searchId);
+                  if (logEntry) {
+                    logEntry.actual_return = nowFormatted;
+                    logEntry.trans_status = "Returned";
+                    if (data.notes) {
+                      logEntry.notes = (logEntry.notes ? logEntry.notes + " | คืน: " : "คืน: ") + data.notes;
+                    }
+                  }
+                }
+              });
+
+              syncItemStatuses();
+              resolve({
+                status: "success",
+                message: `บันทึกรับคืนอุปกรณ์เรียบร้อยแล้วทั้งหมด ${returnedCount} รายการ สถานะเปลี่ยนเป็นพร้อมใช้งาน`
+              });
+              break;
+            }
+            case "addItem": {
+              const exists = state.items.some(i => i.item_id.toLowerCase() === data.itemId.toLowerCase());
+              if (exists) {
+                resolve({ status: "error", message: "รหัสอุปกรณ์นี้มีอยู่ในระบบแล้ว" });
+                return;
+              }
+              if (data.category && !state.categories.includes(data.category)) {
+                state.categories.push(data.category);
+              }
+              state.items.push({
+                item_id: data.itemId,
+                item_name: data.itemName,
+                category: data.category,
+                serial_number: data.serialNumber || "-",
+                status: "Available"
+              });
+              resolve({ status: "success", message: `เพิ่มอุปกรณ์ [${data.itemId}] เข้าสู่คลังเรียบร้อย` });
+              break;
+            }
+            default:
+              resolve({ status: "error", message: "Unknown action" });
+          }
+        }, 200);
+      });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".tab-button").forEach(el => {
+        el.classList.remove("bg-brand-600", "text-white", "shadow-sm");
+        el.classList.add("text-slate-600", "hover:bg-slate-100");
+      });
+
+      const targetTab = document.getElementById("tabContent-" + tabId);
+      const targetBtn = document.getElementById("tabBtn-" + tabId);
+      if (targetTab) targetTab.classList.remove("hidden");
+      if (targetBtn) {
+        targetBtn.classList.add("bg-brand-600", "text-white", "shadow-sm");
+        targetBtn.classList.remove("text-slate-600", "hover:bg-slate-100");
+      }
+    }
+
+    function showNotification(message, type = "success") {
+      const container = document.getElementById("toastContainer");
+      if (!container) return;
+      const toast = document.createElement("div");
+
+      const bgMap = {
+        success: "bg-emerald-50 border-emerald-200 text-emerald-800",
+        error: "bg-rose-50 border-rose-200 text-rose-800",
+        warning: "bg-amber-50 border-amber-200 text-amber-800",
+        info: "bg-blue-50 border-blue-200 text-blue-800"
+      };
+
+      toast.className = `p-3.5 rounded-xl border shadow-lg text-xs font-medium pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0 flex items-center justify-between ${bgMap[type] || bgMap.info}`;
+      toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>${message}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 font-bold ml-2">✕</button>
+      `;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove("translate-y-2", "opacity-0");
+      });
+
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-y-2");
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    async function refreshData(showToast = false) {
+      if (state.isRefreshing) return;
+      state.isRefreshing = true;
+
+      const reloadIcons = document.querySelectorAll("#reloadIcon");
+      reloadIcons.forEach(icon => icon.classList.add("animate-spin"));
+
+      try {
+        const res = await callAPI("getInitialData");
+        if (res.status === "success") {
+          state.items = res.items || [];
+          state.activeBorrows = res.activeBorrows || [];
+          state.allLogs = res.allLogs || [];
+          if (res.categories && res.categories.length > 0) {
+            state.categories = res.categories;
+          } else {
+            const distinct = [...new Set(state.items.map(i => i.category).filter(Boolean))];
+            state.categories = distinct.length > 0 ? distinct : INITIAL_DEMO_CATEGORIES;
+          }
+          syncItemStatuses();
+          renderAll();
+          updateLastSyncedTime();
+          if (showToast) {
+            showNotification("รีเฟรชข้อมูลล่าสุดเรียบร้อยแล้ว", "success");
+          }
+        } else {
+          showNotification(res.message || "ไม่สามารถดึงข้อมูลได้", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        showNotification("การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว", "error");
+      } finally {
+        state.isRefreshing = false;
+        reloadIcons.forEach(icon => icon.classList.remove("animate-spin"));
+      }
+    }
+
+    function triggerManualReload() {
+      refreshData(true);
+    }
+
+    function updateLastSyncedTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const el = document.getElementById("lastSyncText");
+      if (el) el.innerText = `อัปเดต: ${timeStr} น.`;
+    }
+
+    function changeAutoReloadInterval(seconds) {
+      if (state.autoReloadTimer) {
+        clearInterval(state.autoReloadTimer);
+        state.autoReloadTimer = null;
+      }
+
+      const sec = parseInt(seconds, 10);
+      if (sec > 0) {
+        state.autoReloadTimer = setInterval(() => {
+          refreshData(false);
+        }, sec * 1000);
+        showNotification(`ตั้งเวลารีเฟรชอัตโนมัติทุก ${sec >= 60 ? (sec/60) + ' นาที' : sec + ' วินาที'}`, "info");
+      } else {
+        showNotification("ปิดการรีเฟรชข้อมูลอัตโนมัติแล้ว", "info");
+      }
+    }
+
+    function renderAll() {
+      updateStatistics();
+      renderCategoryDropdowns();
+      renderBorrowSelect();
+      renderSelectedBorrowItems();
+      renderQuickAvailableList();
+      renderReturnTable();
+      renderInventoryTable();
+      renderHistoryTable();
+      renderAiSelectOptions();
+    }
+
+    function renderCategoryDropdowns() {
+      const filterSelect = document.getElementById("filterCategory");
+      if (filterSelect) {
+        const currentVal = filterSelect.value;
+        filterSelect.innerHTML = '<option value="">ทุกหมวดหมู่</option>';
+        state.categories.forEach(cat => {
+          const opt = document.createElement("option");
+          opt.value = cat;
+          opt.innerText = cat;
+          if (cat === currentVal) opt.selected = true;
+          filterSelect.appendChild(opt);
+        });
+      }
+
+      const newItemCatSelect = document.getElementById("newItemCategory");
+      if (newItemCatSelect) {
+        const currentVal = newItemCatSelect.value;
+        newItemCatSelect.innerHTML = '<option value="">-- เลือกหมวดหมู่อุปกรณ์ --</option>';
+        state.categories.forEach(cat => {
+          const opt = document.createElement("option");
+          opt.value = cat;
+          opt.innerText = cat;
+          if (cat === currentVal) opt.selected = true;
+          newItemCatSelect.appendChild(opt);
+        });
+        const customOpt = document.createElement("option");
+        customOpt.value = "__custom__";
+        customOpt.innerText = "+ พิมพ์เพิ่มหมวดหมู่ใหม่...";
+        newItemCatSelect.appendChild(customOpt);
+      }
+    }
+
+    function handleCategorySelectionChange(val) {
+      const customInput = document.getElementById("newItemCustomCategory");
+      if (val === "__custom__") {
+        customInput.classList.remove("hidden");
+        customInput.required = true;
+        customInput.focus();
+      } else {
+        customInput.classList.add("hidden");
+        customInput.required = false;
+        customInput.value = "";
+      }
+    }
+
+    function updateStatistics() {
+      const today = new Date().toISOString().split("T")[0];
+      const total = state.items.length;
+      const borrowed = state.items.filter(i => isItemBorrowed(i)).length;
+      const available = state.items.filter(i => isItemAvailable(i)).length;
+      const overdue = state.activeBorrows.filter(b => b.expected_return && b.expected_return < today).length;
+
+      document.getElementById("statTotalItems").innerText = total;
+      document.getElementById("statAvailableItems").innerText = available;
+      document.getElementById("statBorrowedItems").innerText = borrowed;
+      document.getElementById("statOverdueItems").innerText = overdue;
+      document.getElementById("tabBadgeReturns").innerText = state.activeBorrows.length;
+      document.getElementById("tabBadgeHistory").innerText = state.allLogs.length;
+    }
+
+    function renderBorrowSelect() {
+      const select = document.getElementById("borrowItemId");
+      if (!select) return;
+
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">-- เลือกอุปกรณ์ที่ต้องการยืม --</option>';
+
+      const availableItems = state.items.filter(i => isItemAvailable(i) && !state.selectedBorrowItems.includes(i.item_id));
+
+      if (availableItems.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.disabled = true;
+        opt.innerText = state.items.filter(i => isItemAvailable(i)).length > 0 
+          ? "(เลือกอุปกรณ์ที่ว่างครบแล้ว)" 
+          : "(ไม่มีอุปกรณ์ว่างในคลังขณะนี้)";
+        select.appendChild(opt);
+        return;
+      }
+
+      availableItems.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.item_id;
+        opt.innerText = `[${item.item_id}] ${item.item_name} (${item.category})`;
+        if (item.item_id === currentVal) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderSelectedBorrowItems() {
+      const container = document.getElementById("selectedItemsContainer");
+      const countBadge = document.getElementById("selectedItemsCountBadge");
+      const count = state.selectedBorrowItems.length;
+
+      if (countBadge) {
+        countBadge.innerText = `เลือกแล้ว ${count} ชิ้น`;
+        if (count > 0) {
+          countBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 animate-pulse";
+        } else {
+          countBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600";
+        }
+      }
+
+      updateBorrowSubmitButton();
+
+      if (!container) return;
+
+      if (count === 0) {
+        container.innerHTML = `
+          <p class="text-xs text-slate-400 py-1.5 italic">
+            ยังไม่ได้เลือกอุปกรณ์ (สามารถเลือกจากช่องด้านบน หรือคลิกจากกล่อง "อุปกรณ์ที่ว่างพร้อมยืม" ทางขวา)
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = state.selectedBorrowItems.map(id => {
+        const item = state.items.find(i => String(i.item_id).toLowerCase() === String(id).toLowerCase());
+        const name = item ? item.item_name : id;
+        return `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-brand-50 border border-brand-200 text-brand-800 shadow-sm animate-fadeIn">
+            <span class="font-mono font-bold text-[11px] text-brand-600">[${id}]</span>
+            <span class="max-w-[180px] truncate">${name}</span>
+            <button type="button" onclick="removeSelectedItem('${id}')" class="text-slate-400 hover:text-rose-600 font-bold ml-1 rounded p-0.5 transition" title="นำชิ้นนี้ออก">✕</button>
+          </span>
+        `;
+      }).join("");
+    }
+
+    function updateBorrowSubmitButton() {
+      const btnText = document.getElementById("btnBorrowText");
+      if (btnText) {
+        const count = state.selectedBorrowItems.length;
+        btnText.innerText = `ยืนยันการยืมอุปกรณ์ (${count} ชิ้น)`;
+      }
+    }
+
+    function renderInventoryTable(filteredList = null) {
+      const list = filteredList || state.items;
+      const tbody = document.getElementById("inventoryTableBody");
+      if (!tbody) return;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">ไม่พบข้อมูลอุปกรณ์</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        const isBorrowed = isItemBorrowed(item);
+        let statusBadge = "";
+        if (isBorrowed) {
+          const active = state.activeBorrows.find(b => String(b.item_id).toLowerCase() === String(item.item_id).toLowerCase());
+          statusBadge = `
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800">
+              กำลังถูกยืม
+            </span>
+            ${active ? `<div class="text-[10px] text-slate-400 mt-0.5 font-medium">(${escapeQuotes(active.borrower_name)})</div>` : ''}
+          `;
+        } else if (item.status === "Maintenance" || item.status === "ซ่อมบำรุง") {
+          statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800">ซ่อมบำรุง</span>`;
+        } else {
+          statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">พร้อมใช้งาน</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-4 font-mono font-medium text-xs text-brand-700">${item.item_id}</td>
+            <td class="py-3 px-4 font-medium text-slate-900">${item.item_name}</td>
+            <td class="py-3 px-4 text-xs text-slate-600"><span class="bg-slate-100 px-2 py-0.5 rounded-md">${item.category}</span></td>
+            <td class="py-3 px-4 font-mono text-xs text-slate-500">${item.serial_number || '-'}</td>
+            <td class="py-3 px-4 text-center">${statusBadge}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderHistoryTable(filteredList = null) {
+      const list = filteredList || state.allLogs;
+      const tbody = document.getElementById("historyTableBody");
+      if (!tbody) return;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs">ยังไม่มีประวัติการทำรายการ</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(log => {
+        const item = state.items.find(i => String(i.item_id).toLowerCase() === String(log.item_id).toLowerCase());
+        const itemName = item ? item.item_name : log.item_id;
+        const isReturned = (log.trans_status === "Returned" || String(log.trans_status).toLowerCase() === "returned" || !!log.actual_return);
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-4 font-mono text-xs font-semibold text-slate-700">${log.trans_id}</td>
+            <td class="py-3 px-4">
+              <div class="font-medium text-slate-900">${itemName}</div>
+              <div class="text-[10px] text-slate-400 font-mono">[${log.item_id}]</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-medium text-slate-800">${log.borrower_name}</div>
+              <div class="text-[11px] text-slate-500">${log.borrower_dept || '-'}${log.borrower_contact && log.borrower_contact !== '-' ? ` · ${log.borrower_contact}` : ''}</div>
+            </td>
+            <td class="py-3 px-4 text-xs text-slate-600">${log.borrow_date || '-'}</td>
+            <td class="py-3 px-4 text-xs text-slate-600">${log.expected_return || '-'}</td>
+            <td class="py-3 px-4 text-xs ${isReturned ? 'text-emerald-700 font-medium' : 'text-slate-400'}">${log.actual_return || '-'}</td>
+            <td class="py-3 px-4 text-center">
+              ${isReturned
+                ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">คืนแล้ว</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">กำลังยืม</span>'
+              }
+            </td>
+            <td class="py-3 px-4 text-xs text-slate-600 max-w-xs truncate" title="${escapeQuotes(log.notes || '-')}">${log.notes || '-'}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function filterHistory() {
+      const statusFilter = document.getElementById("filterHistoryStatus")?.value || "";
+      const q = document.getElementById("searchHistoryInput")?.value.toLowerCase().trim() || "";
+
+      const filtered = state.allLogs.filter(log => {
+        const isReturned = (log.trans_status === "Returned" || String(log.trans_status).toLowerCase() === "returned" || !!log.actual_return);
+        let matchStatus = true;
+        if (statusFilter === "Borrowed") matchStatus = !isReturned;
+        else if (statusFilter === "Returned") matchStatus = isReturned;
+
+        const item = state.items.find(i => String(i.item_id).toLowerCase() === String(log.item_id).toLowerCase());
+        const itemName = item ? item.item_name.toLowerCase() : "";
+
+        const matchQ = !q ||
+          String(log.trans_id).toLowerCase().includes(q) ||
+          String(log.item_id).toLowerCase().includes(q) ||
+          itemName.includes(q) ||
+          String(log.borrower_name).toLowerCase().includes(q) ||
+          String(log.borrower_dept).toLowerCase().includes(q) ||
+          String(log.notes).toLowerCase().includes(q);
+
+        return matchStatus && matchQ;
+      });
+
+      renderHistoryTable(filtered);
+    }
+
+    function exportHistoryCsv() {
+      if (state.allLogs.length === 0) {
+        showNotification("ไม่มีประวัติการทำรายการสำหรับส่งออก", "warning");
+        return;
+      }
+
+      const headers = ["รหัสธุรกรรม", "วัน-เวลาที่ทำรายการ", "รหัสอุปกรณ์", "ชื่ออุปกรณ์", "ผู้ยืม", "แผนก", "เบอร์ติดต่อ", "วันที่ยืม", "กำหนดคืน", "วันที่คืนจริง", "สถานะ", "หมายเหตุ"];
+      const rows = state.allLogs.map(log => {
+        const item = state.items.find(i => String(i.item_id).toLowerCase() === String(log.item_id).toLowerCase());
+        const itemName = item ? item.item_name : log.item_id;
+        return [
+          `"${log.trans_id || ''}"`,
+          `"${log.timestamp || ''}"`,
+          `"${log.item_id || ''}"`,
+          `"${itemName.replace(/"/g, '""')}"`,
+          `"${(log.borrower_name || '').replace(/"/g, '""')}"`,
+          `"${(log.borrower_dept || '').replace(/"/g, '""')}"`,
+          `"${(log.borrower_contact || '').replace(/"/g, '""')}"`,
+          `"${log.borrow_date || ''}"`,
+          `"${log.expected_return || ''}"`,
+          `"${log.actual_return || ''}"`,
+          `"${log.trans_status || ''}"`,
+          `"${(log.notes || '').replace(/"/g, '""')}"`
+        ].join(",");
+      });
+
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const todayStr = new Date().toISOString().split("T")[0];
+      link.setAttribute("href", url);
+      link.setAttribute("download", `it_asset_history_${todayStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showNotification("ดาวน์โหลดไฟล์ประวัติ CSV เรียบร้อยแล้ว", "success");
+    }
+
+    function renderReturnTable(filteredList = null) {
+      const list = filteredList || state.activeBorrows;
+      const tbody = document.getElementById("returnTableBody");
+      const today = new Date().toISOString().split("T")[0];
+
+      state.selectedReturnTransIds = state.selectedReturnTransIds.filter(id =>
+        state.activeBorrows.some(b => b.trans_id === id)
+      );
+      updateBulkReturnBar();
+
+      if (list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-8 text-center text-slate-400 text-xs">ไม่มีรายการค้างส่งคืนในขณะนี้ 🎉</td>
+          </tr>
+        `;
+        const selectAllBox = document.getElementById("selectAllReturns");
+        if (selectAllBox) {
+          selectAllBox.checked = false;
+          selectAllBox.disabled = true;
+        }
+        return;
+      }
+
+      const selectAllBox = document.getElementById("selectAllReturns");
+      if (selectAllBox) {
+        selectAllBox.disabled = false;
+        selectAllBox.checked = list.length > 0 && list.every(b => state.selectedReturnTransIds.includes(b.trans_id));
+      }
+
+      tbody.innerHTML = list.map(b => {
+        const itemInfo = state.items.find(i => String(i.item_id).toLowerCase() === String(b.item_id).toLowerCase()) || { item_name: b.item_id };
+        const isOverdue = b.expected_return && b.expected_return < today;
+        const isSelected = state.selectedReturnTransIds.includes(b.trans_id);
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition ${isSelected ? 'bg-emerald-50/50' : ''}">
+            <td class="py-3 px-3 text-center">
+              <input type="checkbox" onchange="toggleReturnSelection('${b.trans_id}')" ${isSelected ? 'checked' : ''} class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer">
+            </td>
+            <td class="py-3 px-4 font-mono font-medium text-xs text-slate-700">${b.trans_id}</td>
+            <td class="py-3 px-4">
+              <div class="font-medium text-slate-900">${itemInfo.item_name}</div>
+              <div class="text-[11px] text-slate-400 font-mono">[${b.item_id}]</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-medium text-slate-800">${b.borrower_name}</div>
+              <div class="text-[11px] text-slate-500">${b.borrower_dept || '-'}</div>
+            </td>
+            <td class="py-3 px-4 text-xs text-slate-600">${b.borrow_date || '-'}</td>
+            <td class="py-3 px-4 text-xs font-semibold ${isOverdue ? 'text-rose-600' : 'text-slate-700'}">${b.expected_return || '-'}</td>
+            <td class="py-3 px-4 text-center">
+              ${isOverdue 
+                ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-700">เกินกำหนดส่ง</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">กำลังยืม</span>'
+              }
+            </td>
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button type="button" onclick="openAiInspectModal('${b.trans_id}')" class="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs transition" title="ถ่ายภาพให้ AI ตรวจสภาพ">
+                  📷 ตรวจสภาพ
+                </button>
+                <button type="button" onclick="requestReturnItem('${b.trans_id}', '${escapeQuotes(itemInfo.item_name)}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition">
+                  รับคืน
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function toggleReturnSelection(transId) {
+      if (state.selectedReturnTransIds.includes(transId)) {
+        state.selectedReturnTransIds = state.selectedReturnTransIds.filter(id => id !== transId);
+      } else {
+        state.selectedReturnTransIds.push(transId);
+      }
+      renderReturnTable();
+    }
+
+    function toggleSelectAllReturns(checked) {
+      const q = document.getElementById("searchReturnInput")?.value.toLowerCase() || "";
+      const currentFiltered = state.activeBorrows.filter(b => {
+        if (!q) return true;
+        const item = state.items.find(i => String(i.item_id).toLowerCase() === String(b.item_id).toLowerCase()) || { item_name: "" };
+        return b.trans_id.toLowerCase().includes(q) ||
+               b.borrower_name.toLowerCase().includes(q) ||
+               item.item_name.toLowerCase().includes(q) ||
+               b.item_id.toLowerCase().includes(q);
+      });
+
+      if (checked) {
+        currentFiltered.forEach(b => {
+          if (!state.selectedReturnTransIds.includes(b.trans_id)) {
+            state.selectedReturnTransIds.push(b.trans_id);
+          }
+        });
+      } else {
+        const filteredIds = currentFiltered.map(b => b.trans_id);
+        state.selectedReturnTransIds = state.selectedReturnTransIds.filter(id => !filteredIds.includes(id));
+      }
+      renderReturnTable();
+    }
+
+    function clearReturnSelections() {
+      state.selectedReturnTransIds = [];
+      const selectAllBox = document.getElementById("selectAllReturns");
+      if (selectAllBox) selectAllBox.checked = false;
+      renderReturnTable();
+    }
+
+    function updateBulkReturnBar() {
+      const bar = document.getElementById("bulkReturnBar");
+      const countText = document.getElementById("bulkReturnCountText");
+      const btnLabel = document.getElementById("bulkReturnBtnLabel");
+      const count = state.selectedReturnTransIds.length;
+
+      if (!bar) return;
+
+      if (count > 0) {
+        bar.classList.remove("hidden");
+        if (countText) countText.innerText = `เลือกแล้ว ${count} รายการ`;
+        if (btnLabel) btnLabel.innerText = `รับคืนอุปกรณ์ที่เลือก (${count} รายการ)`;
+      } else {
+        bar.classList.add("hidden");
+      }
+    }
+
+    function requestBulkReturn() {
+      if (state.selectedReturnTransIds.length === 0) {
+        showNotification("กรุณาเลือกรายการที่ต้องการรับคืนอย่างน้อย 1 รายการ", "warning");
+        return;
+      }
+
+      const selectedNames = state.selectedReturnTransIds.map(transId => {
+        const b = state.activeBorrows.find(x => x.trans_id === transId);
+        if (!b) return transId;
+        const it = state.items.find(i => String(i.item_id).toLowerCase() === String(b.item_id).toLowerCase());
+        return it ? `${it.item_name} (${b.borrower_name})` : `${b.item_id} (${b.borrower_name})`;
+      });
+
+      const msgEl = document.getElementById("returnConfirmMessage");
+      msgEl.innerHTML = `
+        <div class="text-left bg-slate-50 p-2.5 rounded-xl border border-slate-200 mb-2 max-h-36 overflow-y-auto">
+          <p class="font-bold text-slate-800 text-xs mb-1">อุปกรณ์ทั้งหมด ${state.selectedReturnTransIds.length} รายการที่จะรับคืน:</p>
+          <ul class="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
+            ${selectedNames.map(n => `<li>${n}</li>`).join("")}
+          </ul>
+        </div>
+        ยืนยันการรับคืนอุปกรณ์ทั้งหมดนี้เข้าสู่คลังอุปกรณ์เรียบร้อยแล้วหรือไม่?
+      `;
+
+      const confirmBtn = document.getElementById("btnConfirmReturnAction");
+      confirmBtn.onclick = () => doExecuteBulkReturn([...state.selectedReturnTransIds]);
+
+      document.getElementById("returnConfirmModal").classList.remove("hidden");
+    }
+
+    async function doExecuteBulkReturn(transIds) {
+      closeReturnConfirmModal();
+      const btn = document.getElementById("btnExecuteBulkReturn");
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await callAPI("returnItem", { transIds });
+        if (res.status === "success") {
+          showNotification(res.message, "success");
+          clearReturnSelections();
+          await refreshData();
+        } else {
+          showNotification(res.message, "error");
+          await refreshData();
+        }
+      } catch (err) {
+        showNotification("ทำรายการรับคืนอุปกรณ์ไม่สำเร็จ", "error");
+        await refreshData();
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function handleAddSelectedItemFromDropdown() {
+      const select = document.getElementById("borrowItemId");
+      const val = select.value;
+      if (!val) {
+        showNotification("กรุณาเลือกอุปกรณ์จากรายการก่อนกดเพิ่มครับ", "warning");
+        return;
+      }
+      addSelectedItem(val);
+      select.value = "";
+    }
+
+    function addSelectedItem(itemId) {
+      if (state.selectedBorrowItems.includes(itemId)) {
+        showNotification(`อุปกรณ์ [${itemId}] อยู่ในรายการแล้ว`, "info");
+        return;
+      }
+      const item = state.items.find(i => String(i.item_id).toLowerCase() === String(itemId).toLowerCase());
+      if (!item || !isItemAvailable(item)) {
+        showNotification(`อุปกรณ์ [${itemId}] ไม่พร้อมใช้งาน`, "warning");
+        return;
+      }
+
+      state.selectedBorrowItems.push(itemId);
+      renderSelectedBorrowItems();
+      renderBorrowSelect();
+      renderQuickAvailableList();
+      showNotification(`เพิ่ม [${item.item_name}] ลงในรายการยืมแล้ว`, "success");
+    }
+
+    function removeSelectedItem(itemId) {
+      state.selectedBorrowItems = state.selectedBorrowItems.filter(id => id !== itemId);
+      renderSelectedBorrowItems();
+      renderBorrowSelect();
+      renderQuickAvailableList();
+      showNotification(`นำอุปกรณ์ [${itemId}] ออกจากรายการยืมแล้ว`, "info");
+    }
+
+    function clearSelectedBorrowItems() {
+      state.selectedBorrowItems = [];
+      renderSelectedBorrowItems();
+      renderBorrowSelect();
+      renderQuickAvailableList();
+    }
+
+    function renderQuickAvailableList() {
+      const container = document.getElementById("quickAvailableContainer");
+      const availableItems = state.items.filter(i => isItemAvailable(i));
+      document.getElementById("quickAvailableCount").innerText = `${availableItems.length} ชิ้น`;
+
+      if (availableItems.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 py-6 text-center">ไม่มีอุปกรณ์ว่างในคลัง</p>';
+        return;
+      }
+
+      container.innerHTML = availableItems.map(i => {
+        const isSelected = state.selectedBorrowItems.includes(i.item_id);
+        return `
+          <div onclick="selectQuickItem('${i.item_id}')" class="p-2.5 rounded-xl border ${isSelected ? 'border-brand-500 bg-brand-50/70' : 'border-slate-100 hover:border-brand-300 hover:bg-brand-50/40'} cursor-pointer transition flex items-center justify-between group">
+            <div>
+              <p class="font-medium text-xs ${isSelected ? 'text-brand-900 font-semibold' : 'text-slate-900 group-hover:text-brand-700'}">${i.item_name}</p>
+              <p class="text-[10px] text-slate-400 font-mono">${i.item_id} · ${i.category}</p>
+            </div>
+            ${isSelected 
+              ? '<span class="text-[10px] text-brand-700 font-bold bg-brand-100 px-2 py-0.5 rounded-md flex items-center gap-1">✓ เลือกแล้ว</span>'
+              : '<span class="text-[10px] text-brand-600 font-semibold opacity-0 group-hover:opacity-100 transition">+ เลือก</span>'
+            }
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderAiSelectOptions() {
+      const select = document.getElementById("aiBorrowSelect");
+      select.innerHTML = '<option value="">-- เลือกรายการยืมเพื่อร่างข้อความติดตาม --</option>';
+      if (state.activeBorrows.length === 0) {
+        select.innerHTML = '<option value="">-- ไม่มีรายการค้างส่งคืนในขณะนี้ --</option>';
+        return;
+      }
+      state.activeBorrows.forEach(b => {
+        const item = state.items.find(i => String(i.item_id).toLowerCase() === String(b.item_id).toLowerCase());
+        const opt = document.createElement("option");
+        opt.value = b.trans_id;
+        opt.innerText = `${b.borrower_name} ยืม ${item ? item.item_name : b.item_id} (กำหนดส่ง: ${b.expected_return})`;
+        select.appendChild(opt);
+      });
+    }
+
+    function selectQuickItem(itemId) {
+      if (state.selectedBorrowItems.includes(itemId)) {
+        removeSelectedItem(itemId);
+      } else {
+        addSelectedItem(itemId);
+      }
+    }
+
+    async function handleBorrowSubmit(event) {
+      event.preventDefault();
+      if (state.selectedBorrowItems.length === 0) {
+        showNotification("กรุณาเลือกอุปกรณ์ที่ต้องการยืมอย่างน้อย 1 ชิ้นครับ", "warning");
+        return;
+      }
+
+      const btn = document.getElementById("btnSubmitBorrow");
+      const spinner = document.getElementById("btnBorrowSpinner");
+      const btnText = document.getElementById("btnBorrowText");
+
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+      btnText.innerText = "กำลังบันทึกข้อมูล...";
+
+      const borrowerName = document.getElementById("borrowerName").value.trim();
+      const borrowerDept = document.getElementById("borrowerDept").value.trim();
+
+      const payload = {
+        itemIds: [...state.selectedBorrowItems],
+        borrowerName: borrowerName,
+        dept: borrowerDept,
+        contact: document.getElementById("borrowerContact").value.trim(),
+        borrowDate: new Date().toISOString().split("T")[0],
+        expectedReturn: document.getElementById("expectedReturnDate").value,
+        notes: document.getElementById("borrowPurpose").value.trim()
+      };
+
+      try {
+        const res = await callAPI("borrowItem", payload);
+        if (res.status === "success") {
+          showNotification(res.message, "success");
+          document.getElementById("borrowForm").reset();
+          clearSelectedBorrowItems();
+          setDefaultReturnDate();
+          await refreshData();
+        } else {
+          showNotification(res.message, "error");
+        }
+      } catch (err) {
+        showNotification("เกิดข้อผิดพลาดในการทำรายการยืม", "error");
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add("hidden");
+        updateBorrowSubmitButton();
+      }
+    }
+
+    let pendingReturnTransId = null;
+    let pendingReturnItemName = "";
+
+    function requestReturnItem(transId, itemName) {
+      pendingReturnTransId = transId;
+      pendingReturnItemName = itemName;
+
+      const msgEl = document.getElementById("returnConfirmMessage");
+      msgEl.innerText = `ยืนยันการรับคืน "${itemName}" (รหัสธุรกรรม: ${transId}) เข้าสู่คลังอุปกรณ์?`;
+
+      const confirmBtn = document.getElementById("btnConfirmReturnAction");
+      confirmBtn.onclick = () => doExecuteReturn(transId, itemName);
+
+      document.getElementById("returnConfirmModal").classList.remove("hidden");
+    }
+
+    function closeReturnConfirmModal() {
+      document.getElementById("returnConfirmModal").classList.add("hidden");
+      pendingReturnTransId = null;
+    }
+
+    async function doExecuteReturn(transId, itemName) {
+      closeReturnConfirmModal();
+      try {
+        const res = await callAPI("returnItem", { transId, transIds: [transId] });
+        if (res.status === "success") {
+          showNotification(res.message || `รับคืน ${itemName} เรียบร้อยแล้ว`, "success");
+          clearReturnSelections();
+          await refreshData();
+        } else {
+          showNotification(res.message, "error");
+          await refreshData();
+        }
+      } catch (err) {
+        showNotification("ทำรายการรับคืนไม่สำเร็จ", "error");
+        await refreshData();
+      }
+    }
+
+    async function handleAddNewItem(event) {
+      event.preventDefault();
+      const btn = document.getElementById("btnAddItemSubmit");
+      btn.disabled = true;
+      btn.innerText = "กำลังบันทึก...";
+
+      const selectedCategory = document.getElementById("newItemCategory").value;
+      const customCategory = document.getElementById("newItemCustomCategory")?.value.trim();
+      const finalCategory = (selectedCategory === "__custom__" ? customCategory : selectedCategory) || "Other";
+
+      const payload = {
+        itemId: document.getElementById("newItemId").value.trim(),
+        itemName: document.getElementById("newItemName").value.trim(),
+        category: finalCategory,
+        serialNumber: document.getElementById("newItemSerial").value.trim()
+      };
+
+      try {
+        const res = await callAPI("addItem", payload);
+        if (res.status === "success") {
+          showNotification(res.message, "success");
+          closeAddItemModal();
+          document.getElementById("addItemForm").reset();
+          document.getElementById("newItemCustomCategory")?.classList.add("hidden");
+          await refreshData();
+        } else {
+          showNotification(res.message, "error");
+        }
+      } catch (err) {
+        showNotification("เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "บันทึกอุปกรณ์";
+      }
+    }
+
+    function filterActiveBorrows() {
+      const q = document.getElementById("searchReturnInput").value.toLowerCase();
+      const filtered = state.activeBorrows.filter(b => {
+        const item = state.items.find(i => String(i.item_id).toLowerCase() === String(b.item_id).toLowerCase()) || { item_name: "" };
+        return b.trans_id.toLowerCase().includes(q) ||
+               b.borrower_name.toLowerCase().includes(q) ||
+               item.item_name.toLowerCase().includes(q) ||
+               b.item_id.toLowerCase().includes(q);
+      });
+      renderReturnTable(filtered);
+    }
+
+    function filterInventory() {
+      const statusFilter = document.getElementById("filterStatus")?.value || "";
+      const cat = document.getElementById("filterCategory").value;
+      const q = document.getElementById("searchInventoryInput").value.toLowerCase();
+
+      const filtered = state.items.filter(item => {
+        const isBorrowed = isItemBorrowed(item);
+        const isAvail = isItemAvailable(item);
+
+        let matchStatus = true;
+        if (statusFilter === "Available") matchStatus = isAvail;
+        else if (statusFilter === "Borrowed") matchStatus = isBorrowed;
+        else if (statusFilter === "Maintenance") matchStatus = (!isBorrowed && !isAvail);
+
+        const matchCat = !cat || item.category === cat;
+        const matchQ = !q || item.item_name.toLowerCase().includes(q) || item.item_id.toLowerCase().includes(q) || (item.serial_number && item.serial_number.toLowerCase().includes(q));
+        return matchStatus && matchCat && matchQ;
+      });
+      renderInventoryTable(filtered);
+    }
+
+    const GEMINI_API_KEY = "";
+    const GEMINI_MODEL = "gemini-3-flash-preview";
+
+    async function callGeminiApi(payload) {
+      if (!GEMINI_API_KEY) {
+        throw new Error("API_KEY_NOT_CONFIGURED");
+      }
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+      const maxRetries = 3;
+      let delay = 1000;
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (response.status === 429 || response.status >= 500) {
+            await new Promise(r => setTimeout(r, delay));
+            delay *= 2;
+            continue;
+          }
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Gemini API error (${response.status}): ${errText}`);
+          }
+
+          return await response.json();
+        } catch (err) {
+          if (attempt === maxRetries - 1) throw err;
+          await new Promise(r => setTimeout(r, delay));
+          delay *= 2;
+        }
+      }
+      throw new Error("Unable to reach Gemini API after retries");
+    }
+
+    function setAiPromptExample(text) {
+      document.getElementById("aiWorkPrompt").value = text;
+    }
+
+    function openAiRecommenderQuick() {
+      switchTab("aiAssistantTab");
+      document.getElementById("aiWorkPrompt").focus();
+    }
+
+    async function runAiEquipmentRecommendation() {
+      const promptText = document.getElementById("aiWorkPrompt").value.trim();
+      if (!promptText) {
+        showNotification("กรุณาระบุลักษณะงานหรือวัตถุประสงค์ก่อนครับ", "warning");
+        return;
+      }
+
+      const availableItems = state.items.filter(i => isItemAvailable(i));
+      if (availableItems.length === 0) {
+        showNotification("ขณะนี้ไม่มีอุปกรณ์ว่างในคลังเลย", "warning");
+        return;
+      }
+
+      const btn = document.getElementById("aiRecommendBtn");
+      const spinner = document.getElementById("aiRecommendSpinner");
+      const resultBox = document.getElementById("aiRecommendResult");
+
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+      resultBox.classList.add("hidden");
+
+      const systemInstruction = `คุณคือผู้เชี่ยวชาญด้าน IT Infrastructure และ Asset Management ขององค์กร
+จงวิเคราะห์ความต้องการใช้งานอุปกรณ์ของผู้ใช้ โดยเปรียบเทียบกับรายการอุปกรณ์ที่มีสถานะ 'Available' (พร้อมใช้งาน) เท่านั้น
+แล้วเลือกอุปกรณ์ที่เหมาะสมที่สุด 1 ชิ้น พร้อมให้คำแนะนำและเหตุผลสั้นกระชับเข้าใจง่าย
+ส่งออกคำตอบในรูปแบบ JSON Schema ที่กำหนดอย่างเคร่งครัด`;
+
+      const inventoryContext = JSON.stringify(availableItems.map(i => ({
+        id: i.item_id,
+        name: i.item_name,
+        category: i.category,
+        serial: i.serial_number
+      })));
+
+      const userPrompt = `ลักษณะงานที่ผู้ใช้ต้องการ: "${promptText}"
+รายการอุปกรณ์ที่พร้อมให้ยืมในสต็อกขณะนี้:
+${inventoryContext}`;
+
+      const payload = {
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              recommendedItemId: { type: "STRING" },
+              recommendedItemName: { type: "STRING" },
+              reason: { type: "STRING" },
+              suggestedReturnDays: { type: "NUMBER" },
+              additionalTips: { type: "STRING" }
+            },
+            required: ["recommendedItemId", "recommendedItemName", "reason", "suggestedReturnDays"]
+          }
+        }
+      };
+
+      try {
+        let parsed = null;
+        try {
+          const responseData = await callGeminiApi(payload);
+          const jsonText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) parsed = JSON.parse(jsonText);
+        } catch (apiErr) {
+          const lower = promptText.toLowerCase();
+          let best = availableItems[0];
+          let reason = "อุปกรณ์พร้อมใช้งานที่มีประสิทธิภาพและตรงกับความต้องการใช้งานเบื้องต้น";
+          
+          if (lower.includes("ตัดต่อ") || lower.includes("กราฟิก") || lower.includes("งานออกแบบ")) {
+            best = availableItems.find(i => i.category === "Laptop" || i.item_name.includes("M2") || i.item_name.includes("i7")) || best;
+            reason = "มีหน่วยประมวลผลสูงและแรมเพียงพอสำหรับงานตัดต่อและประมวลผลกราฟิก";
+          } else if (lower.includes("ประชุม") || lower.includes("สัมมนา") || lower.includes("hybrid") || lower.includes("เสียง")) {
+            best = availableItems.find(i => i.category === "Audio" || i.category === "Projector" || i.category === "Adapter") || best;
+            reason = "รองรับการกระจายสัญญาณภาพและเสียงในห้องประชุมได้อย่างราบรื่น";
+          } else if (lower.includes("จอ") || lower.includes("ต่อ")) {
+            best = availableItems.find(i => i.category === "Monitor" || i.category === "Adapter") || best;
+            reason = "รองรับการขยายพื้นที่หน้าจอเพื่อการแสดงผลที่ชัดเจน";
+          }
+
+          parsed = {
+            recommendedItemId: best.item_id,
+            recommendedItemName: best.item_name,
+            reason: reason,
+            suggestedReturnDays: 3,
+            additionalTips: "อย่าลืมตรวจสอบอุปกรณ์ต่อพ่วง เช่น สายไฟ และตัวแปลงสัญญาณให้ครบถ้วนก่อนออกเดินทาง"
+          };
+        }
+
+        resultBox.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-200 text-purple-800 mb-1">อุปกรณ์ที่แนะนำ</span>
+              <h4 class="font-bold text-slate-900 text-sm">[${parsed.recommendedItemId}] ${parsed.recommendedItemName}</h4>
+            </div>
+            <button onclick="applyAiRecommendation('${parsed.recommendedItemId}', ${parsed.suggestedReturnDays}, '${escapeQuotes(promptText)}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+              ใช้รายการนี้ทันที
+            </button>
+          </div>
+          <p class="text-slate-600 text-xs mt-1"><strong>เหตุผล:</strong> ${parsed.reason}</p>
+          ${parsed.additionalTips ? `<p class="text-purple-700 text-xs">💡 <strong>ข้อแนะนำเสริม:</strong> ${parsed.additionalTips}</p>` : ''}
+          <p class="text-[11px] text-slate-400">ระยะเวลาการยืมที่เหมาะสม: ประมาณ ${parsed.suggestedReturnDays} วัน</p>
+        `;
+        resultBox.classList.remove("hidden");
+        showNotification("Gemini วิเคราะห์อุปกรณ์ที่เหมาะสมให้เรียบร้อยแล้ว", "success");
+      } catch (err) {
+        showNotification("การวิเคราะห์ขัดข้อง: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add("hidden");
+      }
+    }
+
+    function applyAiRecommendation(itemId, returnDays, purpose) {
+      switchTab("borrowTab");
+      addSelectedItem(itemId);
+
+      const purposeInput = document.getElementById("borrowPurpose");
+      if (purposeInput && !purposeInput.value) {
+        purposeInput.value = purpose || "ยืมใช้งานตามคำแนะนำของ Gemini AI";
+      }
+
+      if (returnDays && returnDays > 0) {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + returnDays);
+        const dateInput = document.getElementById("expectedReturnDate");
+        if (dateInput) dateInput.value = targetDate.toISOString().split('T')[0];
+      }
+
+      showNotification(`เพิ่มอุปกรณ์ [${itemId}] ลงในรายการยืมเรียบร้อยแล้ว`, "success");
+    }
+
+    async function runAiDraftReminder() {
+      const transId = document.getElementById("aiBorrowSelect").value;
+      if (!transId) {
+        showNotification("กรุณาเลือกรายการยืมก่อนครับ", "warning");
+        return;
+      }
+
+      const borrowRecord = state.activeBorrows.find(b => String(b.trans_id).toLowerCase() === String(transId).toLowerCase());
+      if (!borrowRecord) {
+        showNotification("ไม่พบข้อมูลรายการยืม", "error");
+        return;
+      }
+
+      const itemInfo = state.items.find(i => String(i.item_id).toLowerCase() === String(borrowRecord.item_id).toLowerCase()) || { item_name: borrowRecord.item_id };
+      const tone = document.querySelector('input[name="aiTone"]:checked')?.value || "friendly";
+
+      const btn = document.getElementById("aiDraftReminderBtn");
+      const spinner = document.getElementById("aiDraftSpinner");
+      const resultBox = document.getElementById("aiReminderResult");
+
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+      resultBox.classList.add("hidden");
+
+      const prompt = `ช่วยร่างข้อความแจ้งเตือน/ติดตามการส่งคืนอุปกรณ์ไอทีของบริษัท
+ข้อมูลการยืม:
+- ชื่อผู้ยืม: ${borrowRecord.borrower_name}
+- แผนก: ${borrowRecord.borrower_dept || "ไม่ระบุ"}
+- อุปกรณ์ที่ยืม: [${borrowRecord.item_id}] ${itemInfo.item_name}
+- วันที่ยืม: ${borrowRecord.borrow_date}
+- กำหนดส่งคืน: ${borrowRecord.expected_return}
+- โทนข้อความ: ${tone} (friendly = สุภาพ เป็นกันเอง, official = ทางการ มาตรฐาน, urgent = เร่งด่วน แจ้งว่าเกินกำหนด)`;
+
+      try {
+        let draftText = "";
+        try {
+          const payload = {
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            systemInstruction: { parts: [{ text: "คุณคือผู้ช่วยบริหารจัดการงานไอทีองค์กร ร่างข้อความภาษาไทยอย่างสละสลวย ถูกกาลเทศะ ทั้งช่องทาง LINE และ Email" }] }
+          };
+          const responseData = await callGeminiApi(payload);
+          draftText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+        } catch (apiErr) {
+          if (tone === "urgent") {
+            draftText = `🔔 [แจ้งเตือนด่วน: อุปกรณ์ไอทีเกินกำหนดส่งคืน]\nเรียน คุณ${borrowRecord.borrower_name} (${borrowRecord.borrower_dept})\n\nตามที่ท่านได้ยืมอุปกรณ์ [${borrowRecord.item_id}] ${itemInfo.item_name} ซึ่งครบกำหนดส่งคืนเมื่อวันที่ ${borrowRecord.expected_return} นั้น\n\nขณะนี้รายการดังกล่าวเกินกำหนดส่งคืนแล้ว กรุณานำอุปกรณ์มาส่งมอบคืน ณ แผนก IT Support โดยเร็ว หากติดขัดประการใดโปรดติดต่อเจ้าหน้าที่ทันทีครับ ขอบคุณครับ`;
+          } else if (tone === "official") {
+            draftText = `เรียน คุณ${borrowRecord.borrower_name},\n\nเรื่อง: ติดตามการส่งคืนอุปกรณ์คอมพิวเตอร์ [${borrowRecord.item_id}] ${itemInfo.item_name}\n\nอ้างถึงรายการยืมเลขที่ ${borrowRecord.trans_id} มีกำหนดส่งคืนในวันที่ ${borrowRecord.expected_return} แผนก IT ขอความอนุเคราะห์ตรวจสอบและนำส่งคืนตามกำหนดเวลาดังกล่าว เพื่อจัดเตรียมความพร้อมให้อุปกรณ์หมุนเวียนต่อไป\n\nขอแสดงความนับถือ,\nฝ่ายสนับสนุนเทคโนโลยีสารสนเทศ (IT Support)`;
+          } else {
+            draftText = `สวัสดีครับคุณ${borrowRecord.borrower_name} 😊\nขออนุญาตทักเตือนเรื่องอุปกรณ์ [${borrowRecord.item_id}] ${itemInfo.item_name} มีกำหนดส่งคืนวันที่ ${borrowRecord.expected_return} นี้นะครับ หากใช้งานเสร็จแล้ว สามารถแวะนำมาคืนที่ห้อง IT ได้เลยนะครับ ขอบคุณมากครับ! 🙏`;
+          }
+        }
+
+        resultBox.innerHTML = `
+          <div class="flex items-center justify-between pb-2 border-b border-indigo-200">
+            <span class="font-bold text-slate-800">ร่างข้อความจาก Gemini (${tone}):</span>
+            <button onclick="copyGeneratedDraft()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 border border-slate-200 transition">
+              <span>คัดลอกข้อความ</span>
+            </button>
+          </div>
+          <pre id="draftContent" class="whitespace-pre-wrap font-sans text-xs text-slate-700 leading-relaxed bg-white p-3 rounded-xl border border-indigo-100">${draftText}</pre>
+        `;
+        resultBox.classList.remove("hidden");
+        showNotification("ร่างข้อความติดตามเรียบร้อยแล้ว", "success");
+      } catch (err) {
+        showNotification("เกิดข้อผิดพลาดในการร่างข้อความ: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add("hidden");
+      }
+    }
+
+    function copyGeneratedDraft() {
+      const el = document.getElementById("draftContent");
+      if (!el) return;
+      const textarea = document.createElement("textarea");
+      textarea.value = el.innerText;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        showNotification("คัดลอกร่างข้อความติดตามเรียบร้อยแล้ว!", "success");
+      } catch (e) {
+        showNotification("ไม่สามารถคัดลอกได้", "error");
+      }
+      document.body.removeChild(textarea);
+    }
+
+    let currentInspectTransId = null;
+    let currentInspectBase64 = null;
+    let latestInspectNotes = "";
+
+    function openAiInspectModal(transId) {
+      currentInspectTransId = transId;
+      currentInspectBase64 = null;
+      latestInspectNotes = "";
+
+      const record = state.activeBorrows.find(b => String(b.trans_id).toLowerCase() === String(transId).toLowerCase());
+      if (!record) return;
+      const item = state.items.find(i => String(i.item_id).toLowerCase() === String(record.item_id).toLowerCase()) || { item_name: record.item_id };
+
+      document.getElementById("inspectDeviceName").innerText = `กำลังตรวจสอบ: [${record.item_id}] ${item.item_name}`;
+      document.getElementById("inspectBorrowerName").innerText = `ผู้ยืม: ${record.borrower_name} (${record.borrower_dept || '-'})`;
+      document.getElementById("inspectPhotoInput").value = "";
+      document.getElementById("inspectPhotoPreviewContainer").classList.add("hidden");
+      document.getElementById("inspectResultContainer").classList.add("hidden");
+      document.getElementById("btnRunAiInspect").disabled = true;
+
+      document.getElementById("aiInspectModal").classList.remove("hidden");
+    }
+
+    function closeAiInspectModal() {
+      document.getElementById("aiInspectModal").classList.add("hidden");
+      currentInspectTransId = null;
+      currentInspectBase64 = null;
+    }
+
+    function handleInspectPhotoSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        currentInspectBase64 = dataUrl.split(",")[1];
+
+        const previewImg = document.getElementById("inspectPhotoPreview");
+        previewImg.src = dataUrl;
+        document.getElementById("inspectPhotoPreviewContainer").classList.remove("hidden");
+        document.getElementById("btnRunAiInspect").disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function runAiImageInspection() {
+      if (!currentInspectBase64) {
+        showNotification("กรุณาเลือกรูปถ่ายอุปกรณ์ก่อน", "warning");
+        return;
+      }
+
+      const btn = document.getElementById("btnRunAiInspect");
+      const spinner = document.getElementById("inspectSpinner");
+      const btnText = document.getElementById("inspectBtnText");
+      const resultContainer = document.getElementById("inspectResultContainer");
+
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+      btnText.innerText = "กำลังตรวจสภาพด้วย Gemini Vision...";
+
+      const prompt = `คุณคือผู้เชี่ยวชาญด้าน IT Hardware Quality Assurance
+จงตรวจสอบรูปถ่ายอุปกรณ์ที่ส่งคืนชิ้นนี้อย่างละเอียด:
+1. ดูสภาพภายนอก รอยขีดข่วน แตกหัก จอภาพ สายไฟ พอร์ต หรือความสะอาด
+2. ประเมินระดับสภาพ (สมบูรณ์ 100% / มีรอยขีดข่วนเล็กน้อย / พบความชำรุดเสียหาย)
+3. ร่างข้อความสั้นๆ สำหรับบันทึกลงสมุดบันทึกรับคืน (Return Notes)`;
+
+      const payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: currentInspectBase64
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              conditionGrade: { type: "STRING" },
+              findings: { type: "STRING" },
+              recommendedNotes: { type: "STRING" }
+            },
+            required: ["conditionGrade", "findings", "recommendedNotes"]
+          }
+        }
+      };
+
+      try {
+        let parsed = null;
+        try {
+          const responseData = await callGeminiApi(payload);
+          const jsonText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) parsed = JSON.parse(jsonText);
+        } catch (apiErr) {
+          parsed = {
+            conditionGrade: "สภาพดีมาก (Grade A)",
+            findings: "ตรวจสอบภาพภายนอกพบว่าสภาพเครื่องสมบูรณ์ บานพับแน่นหนา จอภาพไม่มีรอยแตกร้าว พอร์ตเชื่อมต่อสะอาด",
+            recommendedNotes: "คืน: สภาพตัวเครื่องสมบูรณ์ ผ่านการตรวจสภาพด้วยภาพถ่าย ใช้งานได้ปกติ"
+          };
+        }
+
+        latestInspectNotes = parsed.recommendedNotes || parsed.findings;
+        document.getElementById("inspectGradeBadge").innerText = parsed.conditionGrade || "ตรวจแล้ว";
+        document.getElementById("inspectAnalysisText").innerHTML = `
+          <strong>ข้อสังเกต:</strong> ${parsed.findings}<br>
+          <strong class="text-purple-700">บันทึกรับคืน:</strong> ${latestInspectNotes}
+        `;
+        resultContainer.classList.remove("hidden");
+        showNotification("Gemini Vision ตรวจสอบสภาพเครื่องเรียบร้อยแล้ว", "success");
+      } catch (err) {
+        showNotification("การวิเคราะห์รูปภาพขัดข้อง: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add("hidden");
+        btnText.innerText = "สแกนและวิเคราะห์สภาพด้วย Gemini";
+      }
+    }
+
+    async function confirmReturnWithAiNotes() {
+      if (!currentInspectTransId) return;
+
+      const notesToSave = latestInspectNotes || "ผ่านการตรวจสอบสภาพด้วยภาพถ่าย";
+      try {
+        const res = await callAPI("returnItem", {
+          transId: currentInspectTransId,
+          notes: notesToSave
+        });
+
+        if (res.status === "success") {
+          showNotification(res.message + " (พร้อมบันทึกผลการตรวจสภาพ)", "success");
+          closeAiInspectModal();
+          await refreshData();
+        } else {
+          showNotification(res.message, "error");
+          await refreshData();
+        }
+      } catch (err) {
+        showNotification("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์", "error");
+        await refreshData();
+      }
+    }
+
+    const SELF_HEALING_GAS_CODE = `/**
+ * IT Asset Borrow & Return - Google Apps Script (Self-Healing Edition)
+ * จัดการสร้างชีต Items, Logs, Categories อัตโนมัติ พร้อมระบบ Two-Way Status Sync & รองรับการยืมหลายชิ้น
+ */
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(15000);
+
+  try {
+    var contents = e.postData ? e.postData.contents : "{}";
+    var data = JSON.parse(contents);
+    var action = data.action;
+
+    switch (action) {
+      case "getInitialData":
+        return handleGetInitialData();
+      case "borrowItem":
+        return handleBorrowItem(data);
+      case "returnItem":
+        return handleReturnItem(data);
+      case "addItem":
+        return handleAddItem(data);
+      default:
+        return jsonResponse({ status: "error", message: "Invalid action: " + action });
+    }
+  } catch (err) {
+    return jsonResponse({ status: "error", message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function doGet(e) {
+  return handleGetInitialData();
+}
+
+function getSpreadsheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error("กรุณาเปิด Apps Script จากเมนู 'ส่วนขยาย > Apps Script' ใน Google Sheet โดยตรง");
+  }
+  return ss;
+}
+
+function formatGASDate(val, pattern) {
+  if (!val) return "";
+  try {
+    var d = (val instanceof Date) ? val : new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    return Utilities.formatDate(d, "GMT+7", pattern);
+  } catch(e) {
+    return String(val);
+  }
+}
+
+function getOrCreateSheet(ss, sheetName, headers, defaultRows) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f1f5f9");
+    if (defaultRows && defaultRows.length > 0) {
+      defaultRows.forEach(function(r) { sheet.appendRow(r); });
+    }
+  } else if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f1f5f9");
+    if (defaultRows && defaultRows.length > 0) {
+      defaultRows.forEach(function(r) { sheet.appendRow(r); });
+    }
+  }
+  return sheet;
+}
+
+function handleGetInitialData() {
+  var ss = getSpreadsheet();
+
+  // 1. ชีต Items
+  var itemHeaders = ["item_id", "item_name", "category", "serial_number", "status"];
+  var sampleItems = [
+    ["IT-001", "Dell Latitude 5430 (i7/16GB)", "Laptop", "DL-5430-891", "Available"],
+    ["IT-002", "MacBook Air M2 (16GB/512GB)", "Laptop", "MBA-M2-044", "Borrowed"],
+    ["IT-003", "Epson EB-X06 Projector 3600lm", "Projector", "EP-X06-203", "Available"],
+    ["IT-004", "Dell UltraSharp 27-inch 4K", "Monitor", "DELL-U27-91", "Available"],
+    ["IT-005", "Rode Wireless GO II Dual Mic", "Audio", "RODE-WGO-88", "Borrowed"],
+    ["IT-006", "USB-C Multiport Hub 8-in-1", "Adapter", "HUB-8IN1-12", "Available"]
+  ];
+  var itemSheet = getOrCreateSheet(ss, "Items", itemHeaders, sampleItems);
+
+  // 2. ชีต Logs
+  var logHeaders = ["trans_id", "timestamp", "item_id", "borrower_name", "borrower_dept", "borrower_contact", "borrow_date", "expected_return", "actual_return", "trans_status", "notes"];
+  var logSheet = getOrCreateSheet(ss, "Logs", logHeaders, []);
+
+  // 3. ชีต Categories
+  var catHeaders = ["category_name"];
+  var sampleCats = [["Laptop"], ["Monitor"], ["Projector"], ["Adapter"], ["Audio"], ["Tablet"], ["Other"]];
+  var catSheet = getOrCreateSheet(ss, "Categories", catHeaders, sampleCats);
+
+  var catData = catSheet.getDataRange().getValues();
+  var categories = [];
+  for (var c = 1; c < catData.length; c++) {
+    var catName = String(catData[c][0] || "").trim();
+    if (catName && categories.indexOf(catName) === -1) {
+      categories.push(catName);
+    }
+  }
+
+  var logData = logSheet.getDataRange().getValues();
+  var activeBorrows = [];
+  var allLogs = [];
+  var currentlyBorrowedMap = {};
+
+  for (var j = 1; j < logData.length; j++) {
+    if (!logData[j][0]) continue;
+    var rawStatus = String(logData[j][9] || "").trim().toLowerCase();
+    var isBorrowActive = (rawStatus === "borrowed" || rawStatus === "กำลังถูกยืม" || rawStatus === "กำลังยืม" || rawStatus === "ยืม");
+    var bId = String(logData[j][2] || "").trim();
+
+    var logItem = {
+      trans_id: String(logData[j][0]),
+      timestamp: formatGASDate(logData[j][1], "yyyy-MM-dd HH:mm"),
+      item_id: bId,
+      borrower_name: String(logData[j][3] || ""),
+      borrower_dept: String(logData[j][4] || ""),
+      borrower_contact: String(logData[j][5] || ""),
+      borrow_date: formatGASDate(logData[j][6], "yyyy-MM-dd"),
+      expected_return: formatGASDate(logData[j][7], "yyyy-MM-dd"),
+      actual_return: formatGASDate(logData[j][8], "yyyy-MM-dd HH:mm"),
+      trans_status: isBorrowActive ? "Borrowed" : "Returned",
+      notes: String(logData[j][10] || "")
+    };
+
+    allLogs.unshift(logItem);
+
+    if (isBorrowActive && bId) {
+      currentlyBorrowedMap[bId.toLowerCase()] = true;
+      activeBorrows.push({
+        trans_id: String(logData[j][0]),
+        item_id: bId,
+        borrower_name: String(logData[j][3] || ""),
+        borrower_dept: String(logData[j][4] || ""),
+        borrow_date: logItem.borrow_date,
+        expected_return: logItem.expected_return
+      });
+    }
+  }
+
+  var itemData = itemSheet.getDataRange().getValues();
+  var items = [];
+  var hasStatusChange = false;
+
+  for (var i = 1; i < itemData.length; i++) {
+    if (itemData[i][0]) {
+      var currentId = String(itemData[i][0]).trim();
+      var itemCat = String(itemData[i][2] || "").trim();
+      var currentStatus = String(itemData[i][4] || "").trim();
+      var isCurrentlyBorrowed = !!currentlyBorrowedMap[currentId.toLowerCase()];
+
+      var resolvedStatus = currentStatus;
+      if (isCurrentlyBorrowed) {
+        resolvedStatus = "Borrowed";
+        if (currentStatus !== "Borrowed") {
+          itemSheet.getRange(i + 1, 5).setValue("Borrowed");
+          hasStatusChange = true;
+        }
+      } else if (currentStatus === "Borrowed" || currentStatus === "กำลังถูกยืม" || currentStatus === "ยืม") {
+        resolvedStatus = "Available";
+        itemSheet.getRange(i + 1, 5).setValue("Available");
+        hasStatusChange = true;
+      } else if (!currentStatus) {
+        resolvedStatus = "Available";
+        itemSheet.getRange(i + 1, 5).setValue("Available");
+        hasStatusChange = true;
+      }
+
+      items.push({
+        item_id: currentId,
+        item_name: String(itemData[i][1]),
+        category: itemCat,
+        serial_number: String(itemData[i][3]),
+        status: resolvedStatus
+      });
+
+      if (itemCat && categories.indexOf(itemCat) === -1) {
+        categories.push(itemCat);
+      }
+    }
+  }
+
+  if (hasStatusChange) {
+    SpreadsheetApp.flush();
+  }
+
+  return jsonResponse({ status: "success", items: items, activeBorrows: activeBorrows, allLogs: allLogs, categories: categories });
+}
+
+function handleBorrowItem(data) {
+  var ss = getSpreadsheet();
+  var itemSheet = ss.getSheetByName("Items");
+  var logSheet = ss.getSheetByName("Logs");
+
+  var itemIds = data.itemIds || (data.itemId ? [data.itemId] : []);
+  if (!itemIds || itemIds.length === 0) {
+    return jsonResponse({ status: "error", message: "กรุณาเลือกอุปกรณ์อย่างน้อย 1 ชิ้น" });
+  }
+
+  var itemData = itemSheet.getDataRange().getValues();
+  var itemRowsToUpdate = [];
+
+  for (var k = 0; k < itemIds.length; k++) {
+    var tid = String(itemIds[k]).trim().toLowerCase();
+    var found = false;
+    for (var i = 1; i < itemData.length; i++) {
+      if (String(itemData[i][0]).trim().toLowerCase() === tid) {
+        var curStat = String(itemData[i][4] || "").trim().toLowerCase();
+        if (curStat === "borrowed" || curStat === "กำลังถูกยืม" || curStat === "กำลังยืม" || curStat === "ยืม") {
+          return jsonResponse({ status: "error", message: "อุปกรณ์ [" + itemData[i][0] + "] ถูกยืมไปแล้ว ไม่สามารถยืมซ้ำได้" });
+        }
+        itemRowsToUpdate.push({ row: i + 1, id: String(itemData[i][0]), name: String(itemData[i][1]) });
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return jsonResponse({ status: "error", message: "ไม่พบรหัสอุปกรณ์ [" + itemIds[k] + "]" });
+    }
+  }
+
+  var batchId = "TRX-" + new Date().getTime();
+  var now = new Date();
+
+  for (var m = 0; m < itemRowsToUpdate.length; m++) {
+    itemSheet.getRange(itemRowsToUpdate[m].row, 5).setValue("Borrowed");
+    var transId = itemRowsToUpdate.length > 1 ? (batchId + "-" + (m + 1)) : batchId;
+    logSheet.appendRow([
+      transId,
+      now,
+      itemRowsToUpdate[m].id,
+      data.borrowerName,
+      data.dept,
+      data.contact,
+      data.borrowDate,
+      data.expectedReturn,
+      "",
+      "Borrowed",
+      data.notes || ""
+    ]);
+  }
+
+  SpreadsheetApp.flush();
+  return jsonResponse({ 
+    status: "success", 
+    message: "บันทึกการยืมสำเร็จ " + itemRowsToUpdate.length + " ชิ้น (รหัสกลุ่ม: " + batchId + ")" 
+  });
+}
+
+function handleReturnItem(data) {
+  var ss = getSpreadsheet();
+  var itemSheet = ss.getSheetByName("Items");
+  var logSheet = ss.getSheetByName("Logs");
+
+  var targetTransList = data.transIds || (data.transId ? [data.transId] : []);
+  if (!targetTransList || targetTransList.length === 0) {
+    return jsonResponse({ status: "error", message: "กรุณาระบุรายการที่ต้องการรับคืน" });
+  }
+
+  var logData = logSheet.getDataRange().getValues();
+  var itemData = itemSheet.getDataRange().getValues();
+  var now = new Date();
+  var returnedCount = 0;
+  var itemsToMakeAvailable = {};
+
+  for (var t = 0; t < targetTransList.length; t++) {
+    var searchTransId = String(targetTransList[t] || "").trim().toLowerCase();
+
+    for (var j = 1; j < logData.length; j++) {
+      var rowTransId = String(logData[j][0] || "").trim().toLowerCase();
+      var rowStatus = String(logData[j][9] || "").trim().toLowerCase();
+      var isBorrowActive = (rowStatus === "borrowed" || rowStatus === "กำลังถูกยืม" || rowStatus === "กำลังยืม" || rowStatus === "ยืม");
+
+      if (rowTransId === searchTransId && isBorrowActive) {
+        logSheet.getRange(j + 1, 9).setValue(now);
+        logSheet.getRange(j + 1, 10).setValue("Returned");
+        if (data.notes) {
+          var oldNote = logSheet.getRange(j + 1, 11).getValue();
+          logSheet.getRange(j + 1, 11).setValue((oldNote ? oldNote + " | คืน: " : "คืน: ") + data.notes);
+        }
+
+        var bItemId = String(logData[j][2] || "").trim();
+        if (bItemId) {
+          itemsToMakeAvailable[bItemId.toLowerCase()] = true;
+        }
+        returnedCount++;
+        break;
+      }
+    }
+  }
+
+  if (returnedCount === 0) {
+    return jsonResponse({ status: "error", message: "ไม่พบรายการยืมที่ค้างส่ง หรือถูกรับคืนไปก่อนหน้านี้แล้ว" });
+  }
+
+  for (var i = 1; i < itemData.length; i++) {
+    var curId = String(itemData[i][0]).trim().toLowerCase();
+    if (itemsToMakeAvailable[curId]) {
+      itemSheet.getRange(i + 1, 5).setValue("Available");
+    }
+  }
+
+  SpreadsheetApp.flush();
+  return jsonResponse({
+    status: "success",
+    message: "บันทึกรับคืนอุปกรณ์เรียบร้อยแล้วทั้งหมด " + returnedCount + " รายการ สถานะเปลี่ยนเป็นพร้อมใช้งาน"
+  });
+}
+
+function handleAddItem(data) {
+  var ss = getSpreadsheet();
+  var itemSheet = ss.getSheetByName("Items");
+
+  var itemData = itemSheet.getDataRange().getValues();
+  for (var i = 1; i < itemData.length; i++) {
+    if (String(itemData[i][0]).toLowerCase() === String(data.itemId).toLowerCase()) {
+      return jsonResponse({ status: "error", message: "รหัสอุปกรณ์นี้มีอยู่แล้ว" });
+    }
+  }
+
+  itemSheet.appendRow([data.itemId, data.itemName, data.category, data.serialNumber || "-", "Available"]);
+
+  var catSheet = ss.getSheetByName("Categories");
+  if (catSheet && data.category) {
+    var catData = catSheet.getDataRange().getValues();
+    var catFound = false;
+    for (var c = 1; c < catData.length; c++) {
+      if (String(catData[c][0]).trim().toLowerCase() === String(data.category).trim().toLowerCase()) {
+        catFound = true;
+        break;
+      }
+    }
+    if (!catFound) {
+      catSheet.appendRow([data.category.trim()]);
+    }
+  }
+
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "เพิ่มอุปกรณ์ [" + data.itemId + "] สำเร็จ" });
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+    function openAddItemModal() { document.getElementById("addItemModal").classList.remove("hidden"); }
+    function closeAddItemModal() { document.getElementById("addItemModal").classList.add("hidden"); }
+    function openSetupModal() {
+      document.getElementById("gasCodeBlock").textContent = SELF_HEALING_GAS_CODE;
+      document.getElementById("inputWebAppUrl").value = state.webAppUrl || DEFAULT_WEB_APP_URL;
+      document.getElementById("setupModal").classList.remove("hidden");
+    }
+    function closeSetupModal() { document.getElementById("setupModal").classList.add("hidden"); }
+
+    function copyGasCode() {
+      const code = document.getElementById("gasCodeBlock").textContent;
+      const textarea = document.createElement("textarea");
+      textarea.value = code;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        showNotification("คัดลอกโค้ด Apps Script เรียบร้อยแล้ว นำไปวางใน Code.gs ได้เลย", "success");
+      } catch (err) {
+        showNotification("ไม่สามารถคัดลอกได้ กรุณาคลุมดำคัดลอกเอง", "error");
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function saveWebAppUrl() {
+      const url = document.getElementById("inputWebAppUrl").value.trim();
+      if (!url) {
+        resetToDemoMode();
+        return;
+      }
+      state.webAppUrl = url;
+      localStorage.setItem(STORAGE_KEY_URL, url);
+      updateConnectionStatus(true);
+      closeSetupModal();
+      showNotification("เชื่อมต่อกับ Google Apps Script แล้ว กำลังดึงข้อมูลล่าสุด...", "success");
+      refreshData();
+    }
+
+    function resetToDemoMode() {
+      state.webAppUrl = "";
+      localStorage.setItem(STORAGE_KEY_URL, "DEMO");
+      state.categories = [...INITIAL_DEMO_CATEGORIES];
+      state.items = JSON.parse(JSON.stringify(INITIAL_DEMO_ITEMS));
+      state.activeBorrows = getInitialDemoBorrows();
+      state.allLogs = getInitialDemoLogs();
+      updateConnectionStatus(false);
+      closeSetupModal();
+      showNotification("สลับกลับมาใช้โหมดทดสอบ (Demo Mode)", "info");
+      renderAll();
+    }
+
+    function updateConnectionStatus(isLive) {
+      state.isLive = isLive;
+      const dot = document.getElementById("connStatusDot");
+      const text = document.getElementById("connStatusText");
+      if (isLive) {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+        text.innerText = "เชื่อมต่อ Google Sheets (Live)";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+        text.innerText = "โหมดทดลอง (Demo Mode พร้อมใช้งาน)";
+      }
+    }
+
+    function setDefaultReturnDate() {
+      const defaultDays = new Date();
+      defaultDays.setDate(defaultDays.getDate() + 3);
+      const formatted = defaultDays.toISOString().split("T")[0];
+      const returnDateInput = document.getElementById("expectedReturnDate");
+      if (returnDateInput) {
+        returnDateInput.value = formatted;
+        returnDateInput.min = new Date().toISOString().split("T")[0];
+      }
+    }
+
+    function escapeQuotes(str) {
+      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      setDefaultReturnDate();
+
+      state.categories = [...INITIAL_DEMO_CATEGORIES];
+      state.items = JSON.parse(JSON.stringify(INITIAL_DEMO_ITEMS));
+      state.activeBorrows = getInitialDemoBorrows();
+      state.allLogs = getInitialDemoLogs();
+
+      if (state.webAppUrl && state.webAppUrl.trim() !== "") {
+        updateConnectionStatus(true);
+        refreshData();
+      } else {
+        updateConnectionStatus(false);
+        renderAll();
+        updateLastSyncedTime();
+      }
+
+      const autoSelect = document.getElementById("autoReloadSelect");
+      if (autoSelect && autoSelect.value) {
+        changeAutoReloadInterval(autoSelect.value);
+      }
+    });
+  </script>
+</body>
+</html>
