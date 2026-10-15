@@ -66,7 +66,7 @@
           <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">ระบบยืม-คืนอุปกรณ์ไอที</h1>
           <p class="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
             <span id="connStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span id="connStatusText">โหมดทดลอง (Demo Mode พร้อมใช้งาน)</span>
+            <span id="connStatusText">กำลังเชื่อมต่อฐานข้อมูล...</span>
             <span class="text-slate-300">|</span>
             <span id="lastSyncText" class="text-slate-500 font-medium">กำลังโหลดข้อมูล...</span>
           </p>
@@ -215,7 +215,7 @@
               </div>
 
               <!-- Searchable Device Combobox Container -->
-              <div class="relative">
+              <div id="itemPickerWrapper" class="relative">
                 <div class="flex gap-2">
                   <div class="relative flex-1">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -266,7 +266,7 @@
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    3. แผนก / สังกัด <span class="text-rose-500">*</span>
+                    3. แผนก / สังกัด (ดึงจากชีต Departments) <span class="text-rose-500">*</span>
                   </label>
                   <button type="button" onclick="openDeptManagementModal()" class="text-[11px] text-brand-600 hover:underline font-semibold flex items-center gap-0.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
@@ -274,15 +274,20 @@
                   </button>
                 </div>
                 
-                <div class="relative">
-                  <input type="text" id="borrowerDeptSearchInput" 
-                         placeholder="คลิกเลือกหรือพิมพ์ค้นหาแผนก..." 
-                         oninput="filterDepartmentDropdown()" 
-                         onfocus="openDepartmentDropdown()"
-                         autocomplete="off"
-                         required
-                         class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition cursor-pointer">
-                  <input type="hidden" id="borrowerDept" required>
+                <div id="deptPickerWrapper" class="relative">
+                  <div class="relative">
+                    <input type="text" id="borrowerDeptSearchInput" 
+                           placeholder="คลิกเลือกหรือพิมพ์ค้นหาแผนก..." 
+                           oninput="handleDeptSearchInput(this.value)" 
+                           onfocus="openDepartmentDropdown()"
+                           autocomplete="off"
+                           required
+                           class="w-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition cursor-pointer">
+                    <button type="button" onclick="toggleDepartmentDropdown()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                  </div>
+                  <input type="hidden" id="borrowerDept">
 
                   <div id="deptDropdownMenu" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 max-h-52 overflow-y-auto p-1.5 animate-fadeIn">
                     <div id="deptOptionsContainer" class="space-y-0.5">
@@ -440,6 +445,7 @@
                 <th class="py-3 px-4 font-semibold">หมวดหมู่</th>
                 <th class="py-3 px-4 font-semibold">Serial Number</th>
                 <th class="py-3 px-4 font-semibold text-center">สถานะ</th>
+                <th class="py-3 px-4 font-semibold text-center">จัดการ</th>
               </tr>
             </thead>
             <tbody id="inventoryTableBody" class="divide-y divide-slate-100">
@@ -620,7 +626,7 @@
           </div>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">สถานะรายการ *</label>
-            <select id="editHistoryStatus" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold">
+            <select id="editHistoryStatus" onchange="handleEditHistoryStatusChange(this.value)" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold">
               <option value="Borrowed">Borrowed (กำลังยืม - ยังไม่คืน)</option>
               <option value="Returned">Returned (คืนแล้วเรียบร้อย)</option>
             </select>
@@ -659,24 +665,27 @@
   <div id="deptManageModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-        <h3 class="font-bold text-slate-900 text-sm">จัดการรายชื่อแผนก / สังกัด</h3>
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm">จัดการรายชื่อแผนก / สังกัด</h3>
+          <p class="text-[11px] text-slate-500">ข้อมูลจะถูกบันทึกลงชีต <strong>Departments</strong> ใน Google Sheets</p>
+        </div>
         <button onclick="closeDeptManagementModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
       </div>
 
       <!-- Add New Dept Input -->
       <div class="mb-4">
-        <label class="block text-xs font-semibold text-slate-700 mb-1">เพิ่มแผนกใหม่:</label>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">เพิ่มแผนกใหม่เข้าฐานข้อมูล:</label>
         <div class="flex gap-2">
-          <input type="text" id="newDepartmentNameInput" placeholder="เช่น แผนกบัญชี, ฝ่ายกฎหมาย" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs">
-          <button type="button" onclick="handleAddNewDepartment()" class="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shrink-0">
-            + เพิ่มแผนก
+          <input type="text" id="newDepartmentNameInput" placeholder="เช่น ฝ่ายบัญชี, กฎหมาย, คลังสินค้า" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs">
+          <button type="button" onclick="handleAddNewDepartment()" class="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shrink-0 shadow-sm">
+            + บันทึกแผนก
           </button>
         </div>
       </div>
 
       <!-- Existing Dept List -->
       <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">รายชื่อแผนกปัจจุบัน (<span id="deptCountLabel">0</span> แผนก):</label>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">รายชื่อแผนกในชีตปัจจุบัน (<span id="deptCountLabel">0</span> แผนก):</label>
         <div id="deptManageListContainer" class="max-h-56 overflow-y-auto space-y-1.5 border border-slate-200 rounded-xl p-2 bg-slate-50">
           <!-- Populated dynamically -->
         </div>
@@ -687,6 +696,47 @@
           ปิดหน้าต่าง
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Edit Asset in Inventory -->
+  <div id="editItemModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm">แก้ไขข้อมูลและสถานะอุปกรณ์</h3>
+          <p id="editItemCodeLabel" class="text-[11px] text-slate-500 font-mono">รหัส: -</p>
+        </div>
+        <button onclick="closeEditItemModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+      </div>
+
+      <form id="editItemForm" onsubmit="handleSaveItemEdit(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editItemId">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">ชื่ออุปกรณ์ *</label>
+          <input type="text" id="editItemName" required class="w-full px-3 py-2 rounded-xl border border-slate-300">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">หมวดหมู่ *</label>
+          <input type="text" id="editItemCategory" required class="w-full px-3 py-2 rounded-xl border border-slate-300">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Serial Number</label>
+          <input type="text" id="editItemSerial" class="w-full px-3 py-2 rounded-xl border border-slate-300">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">สถานะอุปกรณ์ *</label>
+          <select id="editItemStatus" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold">
+            <option value="Available">Available (พร้อมใช้งาน)</option>
+            <option value="Maintenance">Maintenance (ส่งซ่อม / ซ่อมบำรุง)</option>
+            <option value="Borrowed" disabled>Borrowed (กำลังถูกยืม - จัดการผ่านหน้ารับคืน)</option>
+          </select>
+        </div>
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+          <button type="button" onclick="closeEditItemModal()" class="px-4 py-2 rounded-xl font-semibold text-slate-600 hover:bg-slate-100">ยกเลิก</button>
+          <button type="submit" id="btnSaveItemEdit" class="px-4 py-2 rounded-xl font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-sm">บันทึกการแก้ไข</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -734,7 +784,7 @@
           <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">GS</div>
           <div>
             <h3 class="font-bold text-slate-900">ตั้งค่าเชื่อมต่อ Google Sheets & Apps Script</h3>
-            <p class="text-[11px] text-slate-500">ระบบ Self-Healing ป้องกัน Error `null.getDataRange` อัตโนมัติ</p>
+            <p class="text-[11px] text-slate-500">ระบบ Self-Healing สร้างทั้ง 4 แท็บให้ทันทีอัตโนมัติ</p>
           </div>
         </div>
         <button onclick="closeSetupModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
@@ -750,13 +800,19 @@
           </div>
         </div>
 
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800">
-          💡 <strong>สร้าง 4 แท็บอัตโนมัติ!</strong> เมื่อเชื่อมต่อ Apps Script โค้ดจะสร้างแท็บ <code>Items</code>, <code>Logs</code>, <code>Departments</code> และ <code>Categories</code> พร้อมตัวจัดการหลังบ้านและระบบค้นหาให้อัตโนมัติ
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-[11px] text-emerald-900 space-y-1">
+          <p class="font-bold">✨ ระบบฐานข้อมูล 4 แท็บใน Google Spreadsheet:</p>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-700">
+            <li><code>Items</code> : ทะเบียนอุปกรณ์และสถานะ</li>
+            <li><code>Logs</code> : ประวัติการทำรายการยืม-คืน</li>
+            <li><code>Categories</code> : รายชื่อหมวดหมู่อุปกรณ์</li>
+            <li><code>Departments</code> : <strong>รายชื่อแผนก/สังกัด (เพิ่ม-แก้ไขได้ทั้งหน้าเว็บและในชีต)</strong></li>
+          </ul>
         </div>
 
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="font-bold text-slate-800">2. คัดลอกโค้ดนี้ไปวางใน Apps Script (Code.gs):</span>
+            <span class="font-bold text-slate-800">2. คัดลอกโค้ดเวอร์ชันล่าสุดนี้ไปวางใน Apps Script (Code.gs):</span>
             <button onclick="copyGasCode()" class="text-brand-600 font-semibold hover:underline flex items-center gap-1">
               <span>คัดลอกโค้ดทั้งหมด</span>
             </button>
@@ -765,14 +821,12 @@
         </div>
 
         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1 text-[11px]">
-          <p class="font-bold text-slate-800">วิธี Deploy ใน Google Apps Script:</p>
-          <p>1. เปิด Google Sheet > ไปที่ <strong>ส่วนขยาย (Extensions)</strong> > <strong>Apps Script</strong></p>
-          <p>2. ลบโค้ดเดิม วางโค้ดที่คัดลอกนี้ลงไป แล้วกดปุ่ม <strong>บันทึก (Ctrl + S)</strong></p>
-          <p>3. คลิกปุ่ม <strong>Deploy (การทำให้ใช้งานได้)</strong> > เลือก <strong>Manage deployments</strong> > กดรูปดินสอ (Edit) > เลือก <strong>New version</strong></p>
-          <p class="text-rose-600 font-semibold bg-rose-50 p-1.5 rounded-lg border border-rose-200">
-            ⚠️ สำคัญที่สุด: Execute as เลือก "Me" และ Who has access ต้องเลือก "Anyone (ทุกคน)" เท่านั้น
-          </p>
-          <p>4. คัดลอก Web app URL ที่ลงท้ายด้วย <code>/exec</code> มาวางในช่องด้านบนแล้วกด "บันทึก URL"</p>
+          <p class="font-bold text-slate-800">ขั้นตอนการทำให้แท็บ Departments ปรากฏใน Google Sheet ทันที:</p>
+          <p>1. กดปุ่ม <strong>"คัดลอกโค้ดทั้งหมด"</strong> ด้านบน</p>
+          <p>2. เปิด Google Sheet > ไปที่ <strong>ส่วนขยาย (Extensions)</strong> > <strong>Apps Script</strong></p>
+          <p>3. ลบโค้ดเดิม วางโค้ดใหม่นี้ลงไป แล้วกดปุ่ม <strong>บันทึก (Ctrl + S)</strong></p>
+          <p>4. คลิกปุ่ม <strong>Deploy (การทำให้ใช้งานได้)</strong> > <strong>Manage deployments</strong> > กดรูปดินสอ (Edit) > เลือก Version เป็น <strong>New version</strong> > กด <strong>Deploy</strong></p>
+          <p class="text-emerald-700 font-semibold">5. เมื่อเปิดหน้าเว็บหรือกดรีเฟรช 1 ครั้ง Google Sheet จะสร้างแท็บ <code>Departments</code> ขึ้นมาทันทีครับ</p>
         </div>
       </div>
     </div>
@@ -891,10 +945,21 @@
       "Executive & Management"
     ];
 
-    function getOffsetDate(daysOffset) {
+    function getOffsetDate(daysOffset = 0) {
       const d = new Date();
       d.setDate(d.getDate() + daysOffset);
-      return d.toISOString().split("T")[0];
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function getLocalTimestamp() {
+      const d = new Date();
+      const datePart = getOffsetDate(0);
+      const hours = String(d.getHours()).padStart(2, "0");
+      const mins = String(d.getMinutes()).padStart(2, "0");
+      return `${datePart} ${hours}:${mins}`;
     }
 
     function isItemBorrowed(item) {
@@ -1021,8 +1086,12 @@
                 itemsToBorrow.push(item);
               }
 
+              if (data.dept && !state.departments.some(d => d.toLowerCase() === String(data.dept).trim().toLowerCase())) {
+                state.departments.push(String(data.dept).trim());
+              }
+
               const batchPrefix = "TRX-" + Math.floor(1000 + Math.random() * 9000);
-              const nowFormatted = new Date().toISOString().replace("T", " ").substring(0, 16);
+              const nowFormatted = getLocalTimestamp();
 
               itemsToBorrow.forEach((item, index) => {
                 item.status = "Borrowed";
@@ -1064,7 +1133,7 @@
                 return;
               }
 
-              const nowFormatted = new Date().toISOString().replace("T", " ").substring(0, 16);
+              const nowFormatted = getLocalTimestamp();
               let returnedCount = 0;
 
               targetTransList.forEach(rawId => {
@@ -1108,14 +1177,19 @@
 
               logEntry.borrower_name = data.borrowerName || logEntry.borrower_name;
               logEntry.borrower_dept = data.borrowerDept || logEntry.borrower_dept;
-              logEntry.borrower_contact = data.borrowerContact || logEntry.borrower_contact;
+              logEntry.borrower_contact = data.borrowerContact !== undefined ? data.borrowerContact : logEntry.borrower_contact;
               logEntry.borrow_date = data.borrowDate || logEntry.borrow_date;
               logEntry.expected_return = data.expectedReturn || logEntry.expected_return;
-              logEntry.actual_return = data.actualReturn !== undefined ? data.actualReturn : logEntry.actual_return;
               logEntry.trans_status = newStatus;
+
+              if (newStatus === "Borrowed") {
+                logEntry.actual_return = "";
+              } else {
+                logEntry.actual_return = data.actualReturn || logEntry.actual_return || getLocalTimestamp();
+              }
+
               logEntry.notes = data.notes !== undefined ? data.notes : logEntry.notes;
 
-              // Synchronize active borrows list
               const bIndex = state.activeBorrows.findIndex(b => String(b.trans_id).trim().toLowerCase() === targetId);
               if (newStatus === "Returned" && bIndex !== -1) {
                 state.activeBorrows.splice(bIndex, 1);
@@ -1133,6 +1207,12 @@
                 state.activeBorrows[bIndex].borrower_dept = logEntry.borrower_dept;
                 state.activeBorrows[bIndex].borrow_date = logEntry.borrow_date;
                 state.activeBorrows[bIndex].expected_return = logEntry.expected_return;
+              }
+
+              const targetItem = state.items.find(i => String(i.item_id).toLowerCase() === String(logEntry.item_id).toLowerCase());
+              if (targetItem) {
+                const stillBorrowed = state.activeBorrows.some(b => String(b.item_id).toLowerCase() === String(targetItem.item_id).toLowerCase());
+                targetItem.status = stillBorrowed ? "Borrowed" : "Available";
               }
 
               syncItemStatuses();
@@ -1163,6 +1243,36 @@
               } else {
                 resolve({ status: "error", message: "ไม่พบชื่อแผนกเดิม" });
               }
+              break;
+            }
+            case "deleteDepartment": {
+              const targetDept = String(data.deptName || "").trim();
+              const idx = state.departments.findIndex(d => d.toLowerCase() === targetDept.toLowerCase());
+              if (idx !== -1) {
+                state.departments.splice(idx, 1);
+                resolve({ status: "success", message: `ลบแผนก "${targetDept}" เรียบร้อยแล้ว` });
+              } else {
+                resolve({ status: "error", message: "ไม่พบแผนกที่ต้องการลบ" });
+              }
+              break;
+            }
+            case "updateItem": {
+              const item = state.items.find(i => String(i.item_id).toLowerCase() === String(data.itemId).toLowerCase());
+              if (!item) {
+                resolve({ status: "error", message: "ไม่พบรหัสอุปกรณ์นี้" });
+                return;
+              }
+              item.item_name = data.itemName || item.item_name;
+              item.category = data.category || item.category;
+              item.serial_number = data.serialNumber !== undefined ? data.serialNumber : item.serial_number;
+              if (data.status && !isItemBorrowed(item)) {
+                item.status = data.status;
+              }
+              if (item.category && !state.categories.includes(item.category)) {
+                state.categories.push(item.category);
+              }
+              syncItemStatuses();
+              resolve({ status: "success", message: `อัปเดตข้อมูลอุปกรณ์ [${item.item_id}] เรียบร้อยแล้ว` });
               break;
             }
             case "addItem": {
@@ -1383,17 +1493,17 @@
       `).join("");
     }
 
-    // Close dropdown on outside click
+    // Close dropdown on outside click (checking wrapper so toggle buttons work properly)
     document.addEventListener("click", (e) => {
-      const menu = document.getElementById("searchableItemDropdownMenu");
-      const input = document.getElementById("itemPickerSearchInput");
-      if (menu && !menu.contains(e.target) && e.target !== input) {
-        menu.classList.add("hidden");
+      const itemWrapper = document.getElementById("itemPickerWrapper");
+      const itemMenu = document.getElementById("searchableItemDropdownMenu");
+      if (itemMenu && itemWrapper && !itemWrapper.contains(e.target)) {
+        itemMenu.classList.add("hidden");
       }
 
+      const deptWrapper = document.getElementById("deptPickerWrapper");
       const deptMenu = document.getElementById("deptDropdownMenu");
-      const deptInput = document.getElementById("borrowerDeptSearchInput");
-      if (deptMenu && !deptMenu.contains(e.target) && e.target !== deptInput) {
+      if (deptMenu && deptWrapper && !deptWrapper.contains(e.target)) {
         deptMenu.classList.add("hidden");
       }
     });
@@ -1402,6 +1512,21 @@
      * REQUIREMENT 2: SEARCHABLE & EDITABLE DEPARTMENTS
      * ========================================================= */
     function openDepartmentDropdown() {
+      filterDepartmentDropdown();
+      document.getElementById("deptDropdownMenu").classList.remove("hidden");
+    }
+
+    function toggleDepartmentDropdown() {
+      const menu = document.getElementById("deptDropdownMenu");
+      if (menu.classList.contains("hidden")) {
+        openDepartmentDropdown();
+      } else {
+        menu.classList.add("hidden");
+      }
+    }
+
+    function handleDeptSearchInput(val) {
+      document.getElementById("borrowerDept").value = val.trim();
       filterDepartmentDropdown();
       document.getElementById("deptDropdownMenu").classList.remove("hidden");
     }
@@ -1417,8 +1542,8 @@
         container.innerHTML = `
           <div class="p-3 text-center text-xs text-slate-400">
             ไม่พบแผนก "${q}"
-            <button type="button" onclick="quickAddDeptFromInput('${q}')" class="mt-1 text-brand-600 font-semibold underline block mx-auto text-xs">
-              + บันทึก "${q}" เป็นแผนกใหม่
+            <button type="button" onclick="quickAddDeptFromInput('${escapeQuotes(q)}')" class="mt-1 text-brand-600 font-semibold underline block mx-auto text-xs">
+              + บันทึก "${q}" เป็นแผนกใหม่ลง Google Sheets
             </button>
           </div>
         `;
@@ -1448,7 +1573,10 @@
       openDeptManagementModal(deptName);
     }
 
+    let editingDeptIndex = -1;
+
     function openDeptManagementModal(presetName = "") {
+      editingDeptIndex = -1;
       const input = document.getElementById("newDepartmentNameInput");
       if (input) input.value = presetName;
       renderDeptManageList();
@@ -1457,6 +1585,7 @@
     }
 
     function closeDeptManagementModal() {
+      editingDeptIndex = -1;
       document.getElementById("deptManageModal").classList.add("hidden");
     }
 
@@ -1471,16 +1600,93 @@
         return;
       }
 
-      container.innerHTML = state.departments.map((dept, idx) => `
-        <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs">
-          <span class="font-medium text-slate-800">${dept}</span>
-          <div class="flex items-center gap-1">
-            <button type="button" onclick="promptEditDepartment('${escapeQuotes(dept)}')" class="p-1 text-brand-600 hover:bg-brand-50 rounded" title="แก้ไขชื่อ">
-              ✏️
-            </button>
+      container.innerHTML = state.departments.map((dept, idx) => {
+        if (editingDeptIndex === idx) {
+          return `
+            <div class="flex items-center gap-1.5 p-2 bg-brand-50 rounded-lg border border-brand-300 text-xs">
+              <input type="text" id="inlineEditDeptInput-${idx}" value="${escapeQuotes(dept)}" 
+                     class="flex-1 px-2 py-1 rounded border border-brand-300 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <button type="button" onclick="saveInlineEditDept(${idx}, '${escapeQuotes(dept)}')" class="px-2.5 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded font-semibold text-[11px] shrink-0">
+                บันทึก
+              </button>
+              <button type="button" onclick="cancelInlineEditDept()" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 rounded border border-slate-200 text-[11px] shrink-0">
+                ยกเลิก
+              </button>
+            </div>
+          `;
+        }
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs hover:border-slate-300 transition">
+            <span class="font-medium text-slate-800">${dept}</span>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="startInlineEditDept(${idx})" class="px-2 py-1 text-brand-600 hover:bg-brand-50 rounded font-medium text-[11px]" title="แก้ไขชื่อแผนก">
+                ✏️ แก้ไข
+              </button>
+              <button type="button" onclick="handleDeleteDepartment('${escapeQuotes(dept)}')" class="px-1.5 py-1 text-rose-500 hover:bg-rose-50 rounded text-[11px]" title="ลบแผนก">
+                🗑️
+              </button>
+            </div>
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
+    }
+
+    function startInlineEditDept(idx) {
+      editingDeptIndex = idx;
+      renderDeptManageList();
+      const input = document.getElementById(`inlineEditDeptInput-${idx}`);
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }
+
+    function cancelInlineEditDept() {
+      editingDeptIndex = -1;
+      renderDeptManageList();
+    }
+
+    async function saveInlineEditDept(idx, oldName) {
+      const input = document.getElementById(`inlineEditDeptInput-${idx}`);
+      const newName = (input?.value || "").trim();
+      if (!newName || newName === oldName) {
+        cancelInlineEditDept();
+        return;
+      }
+
+      try {
+        const res = await callAPI("updateDepartment", { oldDeptName: oldName, newDeptName: newName });
+        if (res.status === "success") {
+          showNotification(res.message, "success");
+          state.departments[idx] = newName;
+          editingDeptIndex = -1;
+          renderDeptManageList();
+          renderDepartmentDropdown();
+          if (document.getElementById("borrowerDept").value === oldName) {
+            selectDepartment(newName);
+          }
+        } else {
+          showNotification(res.message, "error");
+        }
+      } catch (e) {
+        showNotification("แก้ไขชื่อแผนกล้มเหลว", "error");
+      }
+    }
+
+    async function handleDeleteDepartment(deptName) {
+      try {
+        const res = await callAPI("deleteDepartment", { deptName });
+        if (res.status === "success") {
+          showNotification(res.message, "info");
+          state.departments = state.departments.filter(d => d !== deptName);
+          renderDeptManageList();
+          renderDepartmentDropdown();
+        } else {
+          showNotification(res.message, "error");
+        }
+      } catch (e) {
+        showNotification("ลบแผนกล้มเหลว", "error");
+      }
     }
 
     async function handleAddNewDepartment() {
@@ -1534,6 +1740,16 @@
     /* =========================================================
      * REQUIREMENT 3: BACK-OFFICE HISTORY LOG EDITOR
      * ========================================================= */
+    function handleEditHistoryStatusChange(newStatus) {
+      const actualReturnInput = document.getElementById("editHistoryActualReturn");
+      if (!actualReturnInput) return;
+      if (newStatus === "Borrowed") {
+        actualReturnInput.value = "";
+      } else if (newStatus === "Returned" && !actualReturnInput.value.trim()) {
+        actualReturnInput.value = getLocalTimestamp();
+      }
+    }
+
     function openEditHistoryModal(transId) {
       const log = state.allLogs.find(l => String(l.trans_id).toLowerCase() === String(transId).toLowerCase());
       if (!log) {
@@ -1553,7 +1769,8 @@
       document.getElementById("editHistoryBorrowDate").value = log.borrow_date || "";
       document.getElementById("editHistoryExpectedReturn").value = log.expected_return || "";
       document.getElementById("editHistoryActualReturn").value = log.actual_return || "";
-      document.getElementById("editHistoryStatus").value = (log.trans_status === "Returned" || log.actual_return) ? "Returned" : "Borrowed";
+      const isCurrentlyReturned = String(log.trans_status || "").toLowerCase() === "returned";
+      document.getElementById("editHistoryStatus").value = isCurrentlyReturned ? "Returned" : "Borrowed";
       document.getElementById("editHistoryNotes").value = log.notes || "";
 
       document.getElementById("editHistoryModal").classList.remove("hidden");
@@ -1645,7 +1862,7 @@
     }
 
     function updateStatistics() {
-      const today = new Date().toISOString().split("T")[0];
+      const today = getOffsetDate(0);
       const total = state.items.length;
       const borrowed = state.items.filter(i => isItemBorrowed(i)).length;
       const available = state.items.filter(i => isItemAvailable(i)).length;
@@ -1713,7 +1930,7 @@
       if (!tbody) return;
 
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">ไม่พบข้อมูลอุปกรณ์</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">ไม่พบข้อมูลอุปกรณ์</td></tr>`;
         return;
       }
 
@@ -1741,9 +1958,71 @@
             <td class="py-3 px-4 text-xs text-slate-600"><span class="bg-slate-100 px-2 py-0.5 rounded-md">${item.category}</span></td>
             <td class="py-3 px-4 font-mono text-xs text-slate-500">${item.serial_number || '-'}</td>
             <td class="py-3 px-4 text-center">${statusBadge}</td>
+            <td class="py-3 px-4 text-center">
+              <button type="button" onclick="openEditItemModal('${escapeQuotes(item.item_id)}')" class="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-brand-700 bg-slate-100 hover:bg-brand-50 rounded-lg border border-slate-200 transition">
+                ✏️ แก้ไข
+              </button>
+            </td>
           </tr>
         `;
       }).join("");
+    }
+
+    function openEditItemModal(itemId) {
+      const item = state.items.find(i => String(i.item_id).toLowerCase() === String(itemId).toLowerCase());
+      if (!item) return;
+
+      document.getElementById("editItemId").value = item.item_id;
+      document.getElementById("editItemCodeLabel").innerText = `รหัสอุปกรณ์: ${item.item_id}`;
+      document.getElementById("editItemName").value = item.item_name || "";
+      document.getElementById("editItemCategory").value = item.category || "";
+      document.getElementById("editItemSerial").value = item.serial_number || "";
+
+      const statusSelect = document.getElementById("editItemStatus");
+      if (isItemBorrowed(item)) {
+        statusSelect.value = "Borrowed";
+        statusSelect.disabled = true;
+      } else {
+        statusSelect.disabled = false;
+        statusSelect.value = (item.status === "Maintenance" || item.status === "ซ่อมบำรุง") ? "Maintenance" : "Available";
+      }
+
+      document.getElementById("editItemModal").classList.remove("hidden");
+    }
+
+    function closeEditItemModal() {
+      document.getElementById("editItemModal").classList.add("hidden");
+    }
+
+    async function handleSaveItemEdit(event) {
+      event.preventDefault();
+      const btn = document.getElementById("btnSaveItemEdit");
+      btn.disabled = true;
+      btn.innerText = "กำลังบันทึก...";
+
+      const payload = {
+        itemId: document.getElementById("editItemId").value,
+        itemName: document.getElementById("editItemName").value.trim(),
+        category: document.getElementById("editItemCategory").value.trim(),
+        serialNumber: document.getElementById("editItemSerial").value.trim(),
+        status: document.getElementById("editItemStatus").value
+      };
+
+      try {
+        const res = await callAPI("updateItem", payload);
+        if (res.status === "success") {
+          showNotification(res.message, "success");
+          closeEditItemModal();
+          await refreshData();
+        } else {
+          showNotification(res.message, "error");
+        }
+      } catch (e) {
+        showNotification("แก้ไขข้อมูลอุปกรณ์ไม่สำเร็จ", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "บันทึกการแก้ไข";
+      }
     }
 
     function renderHistoryTable(filteredList = null) {
@@ -1759,7 +2038,7 @@
       tbody.innerHTML = list.map(log => {
         const item = state.items.find(i => String(i.item_id).toLowerCase() === String(log.item_id).toLowerCase());
         const itemName = item ? item.item_name : log.item_id;
-        const isReturned = (log.trans_status === "Returned" || String(log.trans_status).toLowerCase() === "returned" || !!log.actual_return);
+        const isReturned = String(log.trans_status || "").toLowerCase() === "returned";
 
         return `
           <tr class="hover:bg-slate-50 transition">
@@ -1774,7 +2053,7 @@
             </td>
             <td class="py-3 px-4 text-xs text-slate-600">${log.borrow_date || '-'}</td>
             <td class="py-3 px-4 text-xs text-slate-600">${log.expected_return || '-'}</td>
-            <td class="py-3 px-4 text-xs ${isReturned ? 'text-emerald-700 font-medium' : 'text-slate-400'}">${log.actual_return || '-'}</td>
+            <td class="py-3 px-4 text-xs ${isReturned ? 'text-emerald-700 font-medium' : 'text-slate-400'}">${isReturned ? (log.actual_return || '-') : '-'}</td>
             <td class="py-3 px-4 text-center">
               ${isReturned
                 ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">คืนแล้ว</span>'
@@ -1797,7 +2076,7 @@
       const q = document.getElementById("searchHistoryInput")?.value.toLowerCase().trim() || "";
 
       const filtered = state.allLogs.filter(log => {
-        const isReturned = (log.trans_status === "Returned" || String(log.trans_status).toLowerCase() === "returned" || !!log.actual_return);
+        const isReturned = String(log.trans_status || "").toLowerCase() === "returned";
         let matchStatus = true;
         if (statusFilter === "Borrowed") matchStatus = !isReturned;
         else if (statusFilter === "Returned") matchStatus = isReturned;
@@ -1862,7 +2141,7 @@
     function renderReturnTable(filteredList = null) {
       const list = filteredList || state.activeBorrows;
       const tbody = document.getElementById("returnTableBody");
-      const today = new Date().toISOString().split("T")[0];
+      const today = getOffsetDate(0);
 
       state.selectedReturnTransIds = state.selectedReturnTransIds.filter(id =>
         state.activeBorrows.some(b => b.trans_id === id)
@@ -2162,7 +2441,7 @@
         borrowerName: borrowerName,
         dept: deptVal,
         contact: document.getElementById("borrowerContact").value.trim(),
-        borrowDate: new Date().toISOString().split("T")[0],
+        borrowDate: getOffsetDate(0),
         expectedReturn: document.getElementById("expectedReturnDate").value,
         notes: document.getElementById("borrowPurpose").value.trim()
       };
@@ -2715,10 +2994,10 @@ ${inventoryContext}`;
       }
     }
 
-    /* Updated Google Apps Script code including Department management & History editing */
+    /* Updated Google Apps Script code including Zero-Fail Self-Healing Department Management */
     const SELF_HEALING_GAS_CODE = `/**
- * IT Asset Borrow & Return - Google Apps Script (Self-Healing Edition)
- * จัดการ Items, Logs, Categories, Departments พร้อมระบบหลังบ้านแก้ไขประวัติ และค้นหา
+ * IT Asset Borrow & Return - Google Apps Script (Self-Healing Full Edition)
+ * จัดการ 4 แท็บ: Items, Logs, Categories, Departments (แก้ไขประวัติ, อุปกรณ์ และค้นหา)
  */
 
 function doPost(e) {
@@ -2743,8 +3022,12 @@ function doPost(e) {
         return handleAddDepartment(data);
       case "updateDepartment":
         return handleUpdateDepartment(data);
+      case "deleteDepartment":
+        return handleDeleteDepartment(data);
       case "addItem":
         return handleAddItem(data);
+      case "updateItem":
+        return handleUpdateItem(data);
       default:
         return jsonResponse({ status: "error", message: "Invalid action: " + action });
     }
@@ -2821,9 +3104,17 @@ function handleGetInitialData() {
   var sampleCats = [["Laptop"], ["Monitor"], ["Projector"], ["Adapter"], ["Audio"], ["Tablet"], ["Other"]];
   var catSheet = getOrCreateSheet(ss, "Categories", catHeaders, sampleCats);
 
-  // 4. ชีต Departments
+  // 4. ชีต Departments (สร้างให้อัตโนมัติทันทีถ้ายังไม่มี)
   var deptHeaders = ["department_name"];
-  var sampleDepts = [["IT Support & Infra"], ["Marketing & Branding"], ["HR & Training"], ["Accounting & Finance"], ["Sales & Business Dev"], ["Operations & Supply Chain"], ["Executive & Management"]];
+  var sampleDepts = [
+    ["IT Support & Infra"],
+    ["Marketing & Branding"],
+    ["HR & Training"],
+    ["Accounting & Finance"],
+    ["Sales & Business Dev"],
+    ["Operations & Supply Chain"],
+    ["Executive & Management"]
+  ];
   var deptSheet = getOrCreateSheet(ss, "Departments", deptHeaders, sampleDepts);
 
   var catData = catSheet.getDataRange().getValues();
@@ -2972,6 +3263,22 @@ function handleBorrowItem(data) {
     }
   }
 
+  // บันทึกแผนกใหม่อัตโนมัติหากยังไม่มีในชีต Departments
+  if (data.dept) {
+    var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
+    var deptData = deptSheet.getDataRange().getValues();
+    var deptExists = false;
+    for (var d = 1; d < deptData.length; d++) {
+      if (String(deptData[d][0] || "").trim().toLowerCase() === String(data.dept).trim().toLowerCase()) {
+        deptExists = true;
+        break;
+      }
+    }
+    if (!deptExists) {
+      deptSheet.appendRow([String(data.dept).trim()]);
+    }
+  }
+
   var batchId = "TRX-" + new Date().getTime();
   var now = new Date();
 
@@ -3082,21 +3389,42 @@ function handleUpdateHistoryLog(data) {
     return jsonResponse({ status: "error", message: "ไม่พบรหัสธุรกรรม [" + data.transId + "]" });
   }
 
-  if (data.borrowerName) logSheet.getRange(targetRow, 4).setValue(data.borrowerName);
-  if (data.borrowerDept) logSheet.getRange(targetRow, 5).setValue(data.borrowerDept);
-  if (data.borrowerContact) logSheet.getRange(targetRow, 6).setValue(data.borrowerContact);
-  if (data.borrowDate) logSheet.getRange(targetRow, 7).setValue(data.borrowDate);
-  if (data.expectedReturn) logSheet.getRange(targetRow, 8).setValue(data.expectedReturn);
-  if (data.actualReturn !== undefined) logSheet.getRange(targetRow, 9).setValue(data.actualReturn);
-  if (data.transStatus) logSheet.getRange(targetRow, 10).setValue(data.transStatus);
+  if (data.borrowerName !== undefined) logSheet.getRange(targetRow, 4).setValue(data.borrowerName);
+  if (data.borrowerDept !== undefined) logSheet.getRange(targetRow, 5).setValue(data.borrowerDept);
+  if (data.borrowerContact !== undefined) logSheet.getRange(targetRow, 6).setValue(data.borrowerContact);
+  if (data.borrowDate !== undefined) logSheet.getRange(targetRow, 7).setValue(data.borrowDate);
+  if (data.expectedReturn !== undefined) logSheet.getRange(targetRow, 8).setValue(data.expectedReturn);
+  if (data.transStatus !== undefined) {
+    logSheet.getRange(targetRow, 10).setValue(data.transStatus);
+    if (data.transStatus === "Borrowed") {
+      logSheet.getRange(targetRow, 9).setValue("");
+    } else if (data.actualReturn !== undefined) {
+      logSheet.getRange(targetRow, 9).setValue(data.actualReturn || new Date());
+    }
+  } else if (data.actualReturn !== undefined) {
+    logSheet.getRange(targetRow, 9).setValue(data.actualReturn);
+  }
   if (data.notes !== undefined) logSheet.getRange(targetRow, 11).setValue(data.notes);
 
-  // Synchronize item status
-  if (targetItemId && data.transStatus) {
+  SpreadsheetApp.flush();
+
+  // ตรวจสอบรายการยืมทั้งหมดของอุปกรณ์ชิ้นนี้อีกครั้งก่อนเปลี่ยนสถานะใน Items
+  if (targetItemId) {
+    var updatedLogs = logSheet.getDataRange().getValues();
+    var stillBorrowed = false;
+    for (var k = 1; k < updatedLogs.length; k++) {
+      var lItemId = String(updatedLogs[k][2] || "").trim().toLowerCase();
+      var lStatus = String(updatedLogs[k][9] || "").trim().toLowerCase();
+      if (lItemId === targetItemId.toLowerCase() && (lStatus === "borrowed" || lStatus === "กำลังถูกยืม" || lStatus === "กำลังยืม")) {
+        stillBorrowed = true;
+        break;
+      }
+    }
+
     var itemData = itemSheet.getDataRange().getValues();
     for (var i = 1; i < itemData.length; i++) {
       if (String(itemData[i][0] || "").trim().toLowerCase() === targetItemId.toLowerCase()) {
-        itemSheet.getRange(i + 1, 5).setValue(data.transStatus === "Returned" ? "Available" : "Borrowed");
+        itemSheet.getRange(i + 1, 5).setValue(stillBorrowed ? "Borrowed" : "Available");
         break;
       }
     }
@@ -3108,9 +3436,17 @@ function handleUpdateHistoryLog(data) {
 
 function handleAddDepartment(data) {
   var ss = getSpreadsheet();
-  var deptSheet = ss.getSheetByName("Departments");
-  var newDept = String(data.deptName || "").trim();
+  var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], [
+    ["IT Support & Infra"],
+    ["Marketing & Branding"],
+    ["HR & Training"],
+    ["Accounting & Finance"],
+    ["Sales & Business Dev"],
+    ["Operations & Supply Chain"],
+    ["Executive & Management"]
+  ]);
 
+  var newDept = String(data.deptName || "").trim();
   if (!newDept) {
     return jsonResponse({ status: "error", message: "กรุณาระบุชื่อแผนก" });
   }
@@ -3129,7 +3465,7 @@ function handleAddDepartment(data) {
 
 function handleUpdateDepartment(data) {
   var ss = getSpreadsheet();
-  var deptSheet = ss.getSheetByName("Departments");
+  var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
   var oldName = String(data.oldDeptName || "").trim().toLowerCase();
   var newName = String(data.newDeptName || "").trim();
 
@@ -3143,6 +3479,23 @@ function handleUpdateDepartment(data) {
   }
 
   return jsonResponse({ status: "error", message: "ไม่พบชื่อแผนกเดิม" });
+}
+
+function handleDeleteDepartment(data) {
+  var ss = getSpreadsheet();
+  var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
+  var targetName = String(data.deptName || "").trim().toLowerCase();
+
+  var deptData = deptSheet.getDataRange().getValues();
+  for (var i = 1; i < deptData.length; i++) {
+    if (String(deptData[i][0] || "").trim().toLowerCase() === targetName) {
+      deptSheet.deleteRow(i + 1);
+      SpreadsheetApp.flush();
+      return jsonResponse({ status: "success", message: "ลบแผนกเรียบร้อยแล้ว" });
+    }
+  }
+
+  return jsonResponse({ status: "error", message: "ไม่พบแผนกที่ต้องการลบ" });
 }
 
 function handleAddItem(data) {
@@ -3175,6 +3528,26 @@ function handleAddItem(data) {
 
   SpreadsheetApp.flush();
   return jsonResponse({ status: "success", message: "เพิ่มอุปกรณ์ [" + data.itemId + "] สำเร็จ" });
+}
+
+function handleUpdateItem(data) {
+  var ss = getSpreadsheet();
+  var itemSheet = ss.getSheetByName("Items");
+  var itemData = itemSheet.getDataRange().getValues();
+  var searchId = String(data.itemId || "").trim().toLowerCase();
+
+  for (var i = 1; i < itemData.length; i++) {
+    if (String(itemData[i][0] || "").trim().toLowerCase() === searchId) {
+      if (data.itemName) itemSheet.getRange(i + 1, 2).setValue(data.itemName);
+      if (data.category) itemSheet.getRange(i + 1, 3).setValue(data.category);
+      if (data.serialNumber !== undefined) itemSheet.getRange(i + 1, 4).setValue(data.serialNumber);
+      if (data.status) itemSheet.getRange(i + 1, 5).setValue(data.status);
+      SpreadsheetApp.flush();
+      return jsonResponse({ status: "success", message: "อัปเดตข้อมูลอุปกรณ์ [" + data.itemId + "] สำเร็จ" });
+    }
+  }
+
+  return jsonResponse({ status: "error", message: "ไม่พบรหัสอุปกรณ์ [" + data.itemId + "]" });
 }
 
 function jsonResponse(obj) {
@@ -3250,13 +3623,11 @@ function jsonResponse(obj) {
     }
 
     function setDefaultReturnDate() {
-      const defaultDays = new Date();
-      defaultDays.setDate(defaultDays.getDate() + 3);
-      const formatted = defaultDays.toISOString().split("T")[0];
+      const formatted = getOffsetDate(3);
       const returnDateInput = document.getElementById("expectedReturnDate");
       if (returnDateInput) {
         returnDateInput.value = formatted;
-        returnDateInput.min = new Date().toISOString().split("T")[0];
+        returnDateInput.min = getOffsetDate(0);
       }
     }
 
