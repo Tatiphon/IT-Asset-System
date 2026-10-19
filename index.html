@@ -34,6 +34,7 @@
     }
     ::-webkit-scrollbar-track {
       background: #f1f5f9;
+      border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb {
       background: #cbd5e1;
@@ -188,166 +189,168 @@
 
     <!-- TAB 1: BORROW FORM -->
     <div id="tabContent-borrowTab" class="tab-content">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         
         <!-- Left: Form -->
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6">
-          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
-            <div>
-              <h2 class="text-lg font-bold text-slate-900">บันทึกการขอยืมอุปกรณ์</h2>
-              <p class="text-xs text-slate-500">กรอกข้อมูลผู้ยืมและค้นหาเลือกอุปกรณ์ที่ต้องการ (ยืมได้พร้อมกันหลายชิ้น)</p>
-            </div>
-            <button type="button" onclick="openAiRecommenderQuick()" class="text-xs text-purple-600 font-semibold bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl flex items-center gap-1 transition">
-              <span>✨ ให้ AI ช่วยเลือกอุปกรณ์</span>
-            </button>
-          </div>
-
-          <form id="borrowForm" onsubmit="handleBorrowSubmit(event)" class="space-y-4">
-            
-            <!-- Requirement 1: Searchable Multi-Item Selection Area -->
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  1. เลือกอุปกรณ์ที่พร้อมใช้งาน (ค้นหาได้) <span class="text-rose-500">*</span>
-                </label>
-                <span id="selectedItemsCountBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                  เลือกแล้ว 0 ชิ้น
-                </span>
-              </div>
-
-              <!-- Searchable Device Combobox Container -->
-              <div id="itemPickerWrapper" class="relative">
-                <div class="flex gap-2">
-                  <div class="relative flex-1">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    </span>
-                    <input type="text" id="itemPickerSearchInput" 
-                           placeholder="พิมพ์ค้นหาชื่ออุปกรณ์, รหัส IT-xxx, S/N หรือหมวดหมู่..." 
-                           oninput="filterSearchableItemDropdown()"
-                           onfocus="openSearchableItemDropdown()"
-                           autocomplete="off"
-                           class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition">
-                  </div>
-                  <button type="button" onclick="toggleSearchableItemDropdown()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition shrink-0" title="แสดงรายการทั้งหมด">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    <span>แสดงรายการ</span>
-                  </button>
-                </div>
-
-                <!-- Custom Dropdown Menu with Instant Filtering -->
-                <div id="searchableItemDropdownMenu" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 max-h-60 overflow-y-auto p-1.5 animate-fadeIn">
-                  <div id="searchableItemOptionsContainer" class="space-y-1">
-                    <!-- Populated dynamically -->
-                  </div>
-                </div>
-              </div>
-
-              <!-- Selected Items Cart Container -->
-              <div class="mt-3 p-3 bg-slate-50/90 rounded-xl border border-slate-200 min-h-[85px]">
-                <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200/60 text-[11px] text-slate-500">
-                  <span>รายการอุปกรณ์ที่จะขอยืมในรอบนี้ (คลิกอุปกรณ์ด้านขวาเพื่อเลือกเพิ่มได้):</span>
-                  <button type="button" onclick="clearSelectedBorrowItems()" class="text-rose-500 hover:text-rose-700 font-medium hover:underline text-xs">ล้างทั้งหมด</button>
-                </div>
-                <div id="selectedItemsContainer" class="flex flex-wrap gap-2">
-                  <!-- Dynamically populated selected items -->
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
               <div>
-                <label for="borrowerName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  2. ชื่อ-นามสกุล ผู้ยืม <span class="text-rose-500">*</span>
-                </label>
-                <input type="text" id="borrowerName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                <h2 class="text-lg font-bold text-slate-900">บันทึกการขอยืมอุปกรณ์</h2>
+                <p class="text-xs text-slate-500">กรอกข้อมูลผู้ยืมและค้นหาเลือกอุปกรณ์ที่ต้องการ (ยืมได้พร้อมกันหลายชิ้น)</p>
               </div>
+              <button type="button" onclick="openAiRecommenderQuick()" class="text-xs text-purple-600 font-semibold bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl flex items-center gap-1 transition">
+                <span>✨ ให้ AI ช่วยเลือกอุปกรณ์</span>
+              </button>
+            </div>
 
-              <!-- Requirement 2: Searchable & Editable Department Dropdown -->
+            <form id="borrowForm" onsubmit="handleBorrowSubmit(event)" class="space-y-4">
+              
+              <!-- Requirement 1: Searchable Multi-Item Selection Area -->
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    3. แผนก / สังกัด (ดึงจากชีต Departments) <span class="text-rose-500">*</span>
+                    1. เลือกอุปกรณ์ที่พร้อมใช้งาน (ค้นหาได้) <span class="text-rose-500">*</span>
                   </label>
-                  <button type="button" onclick="openDeptManagementModal()" class="text-[11px] text-brand-600 hover:underline font-semibold flex items-center gap-0.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                    <span>จัดการ/เพิ่มแผนก</span>
-                  </button>
+                  <span id="selectedItemsCountBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    เลือกแล้ว 0 ชิ้น
+                  </span>
                 </div>
-                
-                <div id="deptPickerWrapper" class="relative">
-                  <div class="relative">
-                    <input type="text" id="borrowerDeptSearchInput" 
-                           placeholder="คลิกเลือกหรือพิมพ์ค้นหาแผนก..." 
-                           oninput="handleDeptSearchInput(this.value)" 
-                           onfocus="openDepartmentDropdown()"
-                           autocomplete="off"
-                           required
-                           class="w-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition cursor-pointer">
-                    <button type="button" onclick="toggleDepartmentDropdown()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
+
+                <!-- Searchable Device Combobox Container -->
+                <div id="itemPickerWrapper" class="relative">
+                  <div class="flex gap-2">
+                    <div class="relative flex-1">
+                      <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                      </span>
+                      <input type="text" id="itemPickerSearchInput" 
+                             placeholder="พิมพ์ค้นหาชื่ออุปกรณ์, รหัส IT-xxx, S/N หรือหมวดหมู่..." 
+                             oninput="filterSearchableItemDropdown()"
+                             onfocus="openSearchableItemDropdown()"
+                             autocomplete="off"
+                             class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition">
+                    </div>
+                    <button type="button" onclick="toggleSearchableItemDropdown()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition shrink-0" title="แสดงรายการทั้งหมด">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      <span>แสดงรายการ</span>
                     </button>
                   </div>
-                  <input type="hidden" id="borrowerDept">
 
-                  <div id="deptDropdownMenu" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 max-h-52 overflow-y-auto p-1.5 animate-fadeIn">
-                    <div id="deptOptionsContainer" class="space-y-0.5">
+                  <!-- Custom Dropdown Menu with Instant Filtering -->
+                  <div id="searchableItemDropdownMenu" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 max-h-60 overflow-y-auto p-1.5 animate-fadeIn">
+                    <div id="searchableItemOptionsContainer" class="space-y-1">
                       <!-- Populated dynamically -->
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Selected Items Cart Container -->
+                <div class="mt-3 p-3 bg-slate-50/90 rounded-xl border border-slate-200 min-h-[85px]">
+                  <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200/60 text-[11px] text-slate-500">
+                    <span>รายการอุปกรณ์ที่จะขอยืมในรอบนี้ (คลิกอุปกรณ์ด้านขวาเพื่อเลือกเพิ่มได้):</span>
+                    <button type="button" onclick="clearSelectedBorrowItems()" class="text-rose-500 hover:text-rose-700 font-medium hover:underline text-xs">ล้างทั้งหมด</button>
+                  </div>
+                  <div id="selectedItemsContainer" class="flex flex-wrap gap-2">
+                    <!-- Dynamically populated selected items -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="borrowerName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    2. ชื่อ-นามสกุล ผู้ยืม <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="text" id="borrowerName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                </div>
+
+                <!-- Requirement 2: Searchable & Editable Department Dropdown -->
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      3. แผนก / สังกัด (ดึงจากชีต DEPARTMENTS) <span class="text-rose-500">*</span>
+                    </label>
+                    <button type="button" onclick="openDeptManagementModal()" class="text-[11px] text-brand-600 hover:underline font-semibold flex items-center gap-0.5">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                      <span>จัดการ/เพิ่มแผนก</span>
+                    </button>
+                  </div>
+                  
+                  <div id="deptPickerWrapper" class="relative">
+                    <div class="relative">
+                      <input type="text" id="borrowerDeptSearchInput" 
+                             placeholder="คลิกเลือกหรือพิมพ์ค้นหาแผนก..." 
+                             oninput="handleDeptSearchInput(this.value)" 
+                             onfocus="openDepartmentDropdown()"
+                             autocomplete="off"
+                             required
+                             class="w-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition cursor-pointer">
+                      <button type="button" onclick="toggleDepartmentDropdown()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                    </div>
+                    <input type="hidden" id="borrowerDept">
+
+                    <div id="deptDropdownMenu" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 max-h-52 overflow-y-auto p-1.5 animate-fadeIn">
+                      <div id="deptOptionsContainer" class="space-y-0.5">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="borrowerContact" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    4. เบอร์โทรศัพท์ หรือ LINE ID <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="text" id="borrowerContact" required placeholder="เช่น 081-234-5678" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                </div>
+
+                <div>
+                  <label for="expectedReturnDate" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    5. กำหนดวันที่ส่งคืน <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="date" id="expectedReturnDate" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                </div>
+              </div>
+
               <div>
-                <label for="borrowerContact" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  4. เบอร์โทรศัพท์ หรือ LINE ID <span class="text-rose-500">*</span>
+                <label for="borrowPurpose" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  6. วัตถุประสงค์ในการยืม / สถานที่ใช้งาน
                 </label>
-                <input type="text" id="borrowerContact" required placeholder="เช่น 081-234-5678" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                <textarea id="borrowPurpose" rows="2" placeholder="เช่น นำไปใช้ออกบูธสัมมนาภายนอก, ปฏิบัติงาน WFH ชั่วคราว" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"></textarea>
               </div>
 
-              <div>
-                <label for="expectedReturnDate" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  5. กำหนดวันที่ส่งคืน <span class="text-rose-500">*</span>
-                </label>
-                <input type="date" id="expectedReturnDate" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+              <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="reset" onclick="clearSelectedBorrowItems()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+                  ล้างข้อมูล
+                </button>
+                <button type="submit" id="btnSubmitBorrow" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-sm flex items-center gap-2 transition">
+                  <span id="btnBorrowSpinner" class="hidden animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  <span id="btnBorrowText">ยืนยันการยืมอุปกรณ์ (0 ชิ้น)</span>
+                </button>
               </div>
-            </div>
-
-            <div>
-              <label for="borrowPurpose" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                6. วัตถุประสงค์ในการยืม / สถานที่ใช้งาน
-              </label>
-              <textarea id="borrowPurpose" rows="2" placeholder="เช่น นำไปใช้ออกบูธสัมมนาภายนอก, ปฏิบัติงาน WFH ชั่วคราว" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"></textarea>
-            </div>
-
-            <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-              <button type="reset" onclick="clearSelectedBorrowItems()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
-                ล้างข้อมูล
-              </button>
-              <button type="submit" id="btnSubmitBorrow" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-sm flex items-center gap-2 transition">
-                <span id="btnBorrowSpinner" class="hidden animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
-                <span id="btnBorrowText">ยืนยันการยืมอุปกรณ์ (0 ชิ้น)</span>
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
 
-        <!-- Right: Available Hardware List Quick Peek + Quick Search -->
-        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 flex flex-col h-full min-h-[540px]">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <!-- Right: Available Hardware List Quick Peek + Quick Search (Full Stretched Height) -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 flex flex-col h-[560px] lg:h-full">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 shrink-0">
             <h3 class="font-bold text-slate-900 text-sm">อุปกรณ์ที่ว่างพร้อมยืม</h3>
             <span id="quickAvailableCount" class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">0 ชิ้น</span>
           </div>
 
           <!-- Quick Search Filter for Side Card -->
-          <div class="mb-3">
+          <div class="mb-3 shrink-0">
             <input type="text" id="quickAvailableSearch" oninput="renderQuickAvailableList()" placeholder="🔍 กรองอุปกรณ์ว่างด่วน..." class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-slate-50/50">
           </div>
 
-          <!-- List container stretching all the way to bottom of card -->
-          <div id="quickAvailableContainer" class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
+          <!-- List container stretching all the way to bottom of card with full height scroll -->
+          <div id="quickAvailableContainer" class="flex-1 h-0 min-h-0 overflow-y-auto space-y-2 pr-1.5 pb-1">
             <!-- Dynamically populated -->
           </div>
         </div>
@@ -458,7 +461,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: TRANSACTION HISTORY & BACK-OFFICE EDITING (Requirement 3) -->
+    <!-- TAB 4: TRANSACTION HISTORY & BACK-OFFICE EDITING -->
     <div id="tabContent-historyTab" class="tab-content hidden">
       <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
@@ -588,7 +591,7 @@
     </div>
   </main>
 
-  <!-- MODAL: Edit History / Back-office (Requirement 3) -->
+  <!-- MODAL: Edit History / Back-office -->
   <div id="editHistoryModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -663,7 +666,7 @@
     </div>
   </div>
 
-  <!-- MODAL: Department Management (Requirement 2) -->
+  <!-- MODAL: Department Management -->
   <div id="deptManageModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -1512,7 +1515,7 @@
       `).join("");
     }
 
-    // Close dropdown on outside click (checking wrapper so toggle buttons work properly)
+    // Close dropdown on outside click
     document.addEventListener("click", (e) => {
       const itemWrapper = document.getElementById("itemPickerWrapper");
       const itemMenu = document.getElementById("searchableItemDropdownMenu");
@@ -1757,29 +1760,6 @@
         }
       } catch (e) {
         showNotification("เพิ่มแผนกล้มเหลว", "error");
-      }
-    }
-
-    async function promptEditDepartment(oldName) {
-      const newName = prompt(`แก้ไขชื่อแผนก "${oldName}" เป็น:`, oldName);
-      if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
-
-      try {
-        const res = await callAPI("updateDepartment", { oldDeptName: oldName, newDeptName: newName.trim() });
-        if (res.status === "success") {
-          showNotification(res.message, "success");
-          const idx = state.departments.indexOf(oldName);
-          if (idx !== -1) state.departments[idx] = newName.trim();
-          renderDeptManageList();
-          renderDepartmentDropdown();
-          if (document.getElementById("borrowerDept").value === oldName) {
-            selectDepartment(newName.trim());
-          }
-        } else {
-          showNotification(res.message, "error");
-        }
-      } catch (e) {
-        showNotification("แก้ไขชื่อแผนกล้มเหลว", "error");
       }
     }
 
@@ -3599,123 +3579,4 @@ function handleUpdateItem(data) {
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}`;
-
-    function openAddItemModal() { document.getElementById("addItemModal").classList.remove("hidden"); }
-    function closeAddItemModal() { document.getElementById("addItemModal").classList.add("hidden"); }
-    function openSetupModal() {
-      document.getElementById("gasCodeBlock").textContent = SELF_HEALING_GAS_CODE;
-      document.getElementById("inputWebAppUrl").value = state.webAppUrl || DEFAULT_WEB_APP_URL;
-      document.getElementById("setupModal").classList.remove("hidden");
-    }
-    function closeSetupModal() { document.getElementById("setupModal").classList.add("hidden"); }
-
-    function copyGasCode() {
-      const code = document.getElementById("gasCodeBlock").textContent;
-      const textarea = document.createElement("textarea");
-      textarea.value = code;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand("copy");
-        showNotification("คัดลอกโค้ด Apps Script เรียบร้อยแล้ว นำไปวางใน Code.gs ได้เลย", "success");
-      } catch (err) {
-        showNotification("ไม่สามารถคัดลอกได้ กรุณาคลุมดำคัดลอกเอง", "error");
-      }
-      document.body.removeChild(textarea);
-    }
-
-    function saveWebAppUrl() {
-      const url = document.getElementById("inputWebAppUrl").value.trim();
-      if (!url) {
-        resetToDemoMode();
-        return;
-      }
-      state.webAppUrl = url;
-      localStorage.setItem(STORAGE_KEY_URL, url);
-      updateConnectionStatus(true);
-      closeSetupModal();
-      showNotification("เชื่อมต่อกับ Google Apps Script แล้ว กำลังดึงข้อมูลล่าสุด...", "success");
-      refreshData();
-    }
-
-    function resetToDemoMode() {
-      state.webAppUrl = "";
-      localStorage.setItem(STORAGE_KEY_URL, "DEMO");
-      state.categories = [...INITIAL_DEMO_CATEGORIES];
-      state.departments = [...INITIAL_DEMO_DEPTS];
-      state.items = JSON.parse(JSON.stringify(INITIAL_DEMO_ITEMS));
-      state.activeBorrows = getInitialDemoBorrows();
-      state.allLogs = getInitialDemoLogs();
-      updateConnectionStatus(false);
-      closeSetupModal();
-      showNotification("สลับกลับมาใช้โหมดทดสอบ (Demo Mode)", "info");
-      renderAll();
-    }
-
-    function updateConnectionStatus(isLive) {
-      state.isLive = isLive;
-      const dot = document.getElementById("connStatusDot");
-      const text = document.getElementById("connStatusText");
-      if (isLive) {
-        dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-        text.innerText = "เชื่อมต่อ Google Sheets (Live ตลอดเวลา)";
-      } else {
-        dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
-        text.innerText = "โหมดทดลอง (Demo Mode พร้อมใช้งาน)";
-      }
-    }
-
-    function setDefaultReturnDate() {
-      const formatted = getOffsetDate(3);
-      const returnDateInput = document.getElementById("expectedReturnDate");
-      if (returnDateInput) {
-        returnDateInput.value = formatted;
-        returnDateInput.min = getOffsetDate(0);
-      }
-    }
-
-    function escapeQuotes(str) {
-      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      setDefaultReturnDate();
-
-      state.categories = [...INITIAL_DEMO_CATEGORIES];
-      state.departments = [...INITIAL_DEMO_DEPTS];
-      state.items = JSON.parse(JSON.stringify(INITIAL_DEMO_ITEMS));
-      state.activeBorrows = getInitialDemoBorrows();
-      state.allLogs = getInitialDemoLogs();
-
-      // อัปเดตข้อมูลทันทีเมื่อสลับกลับมาที่แท็บเว็บนี้ (Focus / Visibility Sync)
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          refreshData(false);
-        }
-      });
-      window.addEventListener("focus", () => {
-        refreshData(false);
-      });
-
-      if (state.webAppUrl && state.webAppUrl.trim() !== "") {
-        updateConnectionStatus(true);
-        refreshData(false);
-      } else {
-        updateConnectionStatus(false);
-        renderAll();
-        updateLastSyncedTime();
-      }
-
-      const autoSelect = document.getElementById("autoReloadSelect");
-      if (autoSelect && autoSelect.value) {
-        changeAutoReloadInterval(autoSelect.value);
-      } else {
-        changeAutoReloadInterval(30);
-      }
-    });
-  </script>
-</body>
-</html>
+}
