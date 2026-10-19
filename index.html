@@ -325,7 +325,7 @@
               </div>
 
               <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                <button type="reset" onclick="clearSelectedBorrowItems()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+                <button type="reset" onclick="handleResetBorrowForm()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
                   ล้างข้อมูล
                 </button>
                 <button type="submit" id="btnSubmitBorrow" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-sm flex items-center gap-2 transition">
@@ -911,31 +911,45 @@
      * APPLICATION STATE & CONFIGURATION
      * ========================================================= */
     const STORAGE_KEY_URL = "it_asset_webapp_url";
-    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbEj-79eHal39qVlnENM2GxRTn5C1TVXYjE8IxehEKXokpOHh5VtfHCbuc7_PSr4xO0/exec";
+    // แก้ไขตัวอักษร 'x' ที่ตกหล่นใน URL (AKfycbxEj...)
+    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxEj-79eHal39qVlnENM2GxRTn5C1TVXYjE8IxehEKXokpOHh5VtfHCbuc7_PSr4xO0/exec";
     const OLD_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxypntnPBTPthGdfnCVj5bL6zAIQSAsNqzQ7LMsRlo5wMiTRUmug3mSJXUWNiRHQ4pE/exec";
 
-    // อัปเดตและล้างแคช URL เดิมที่อาจค้างอยู่ใน localStorage ให้อัตโนมัติ
+    // อัปเดตและล้างแคช URL เดิมหรือ URL ที่พิมพ์ผิดใน localStorage ให้อัตโนมัติ
     let storedUrl = localStorage.getItem(STORAGE_KEY_URL);
-    if (!storedUrl || storedUrl === OLD_WEB_APP_URL || storedUrl.includes("AKfycbxypntn") || storedUrl === "DEMO") {
+    if (!storedUrl || storedUrl === OLD_WEB_APP_URL || storedUrl.includes("AKfycbxypntn") || storedUrl.includes("AKfycbEj-") || storedUrl === "DEMO") {
       storedUrl = DEFAULT_WEB_APP_URL;
       localStorage.setItem(STORAGE_KEY_URL, DEFAULT_WEB_APP_URL);
     }
 
     const initialUrl = storedUrl || DEFAULT_WEB_APP_URL;
 
-    const state = {
-      webAppUrl: initialUrl,
-      isLive: !!initialUrl,
-      items: [],
-      activeBorrows: [],
-      allLogs: [],
-      categories: [],
-      departments: [],
-      selectedBorrowItems: [],
-      selectedReturnTransIds: [],
-      isRefreshing: false,
-      autoReloadTimer: null
-    };
+    function getOffsetDate(daysOffset = 0) {
+      const d = new Date();
+      d.setDate(d.getDate() + daysOffset);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function getLocalTimestamp() {
+      const d = new Date();
+      const datePart = getOffsetDate(0);
+      const hours = String(d.getHours()).padStart(2, "0");
+      const mins = String(d.getMinutes()).padStart(2, "0");
+      return `${datePart} ${hours}:${mins}`;
+    }
+
+    function escapeQuotes(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, "&quot;")
+        .replace(/\n/g, " ")
+        .replace(/\r/g, "");
+    }
 
     const INITIAL_DEMO_CATEGORIES = [
       "Laptop",
@@ -957,22 +971,45 @@
       "Executive & Management"
     ];
 
-    function getOffsetDate(daysOffset = 0) {
-      const d = new Date();
-      d.setDate(d.getDate() + daysOffset);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
+    const INITIAL_DEMO_ITEMS = [
+      { item_id: "IT-001", item_name: "Dell Latitude 5430 (i7/16GB)", category: "Laptop", serial_number: "DL-5430-891", status: "Available" },
+      { item_id: "IT-002", item_name: "MacBook Air M2 (16GB/512GB)", category: "Laptop", serial_number: "MBA-M2-044", status: "Borrowed" },
+      { item_id: "IT-003", item_name: "Epson EB-X06 Projector 3600lm", category: "Projector", serial_number: "EP-X06-203", status: "Available" },
+      { item_id: "IT-004", item_name: "Dell UltraSharp 27-inch 4K", category: "Monitor", serial_number: "DELL-U27-91", status: "Available" },
+      { item_id: "IT-005", item_name: "Rode Wireless GO II Dual Mic", category: "Audio", serial_number: "RODE-WGO-88", status: "Borrowed" },
+      { item_id: "IT-006", item_name: "USB-C Multiport Hub 8-in-1", category: "Adapter", serial_number: "HUB-8IN1-12", status: "Available" }
+    ];
+
+    function getInitialDemoBorrows() {
+      return [
+        { trans_id: "TRX-1001", item_id: "IT-002", borrower_name: "กิตติศักดิ์ พัฒนพงศ์", borrower_dept: "Marketing & Branding", borrow_date: getOffsetDate(-6), expected_return: getOffsetDate(-2) },
+        { trans_id: "TRX-1002", item_id: "IT-005", borrower_name: "สุวิมล แสงทอง", borrower_dept: "HR & Training", borrow_date: getOffsetDate(-1), expected_return: getOffsetDate(4) }
+      ];
     }
 
-    function getLocalTimestamp() {
-      const d = new Date();
-      const datePart = getOffsetDate(0);
-      const hours = String(d.getHours()).padStart(2, "0");
-      const mins = String(d.getMinutes()).padStart(2, "0");
-      return `${datePart} ${hours}:${mins}`;
+    function getInitialDemoLogs() {
+      const borrows = getInitialDemoBorrows();
+      return [
+        { trans_id: borrows[0].trans_id, timestamp: borrows[0].borrow_date + " 09:30", item_id: borrows[0].item_id, borrower_name: borrows[0].borrower_name, borrower_dept: borrows[0].borrower_dept, borrower_contact: "081-111-2222", borrow_date: borrows[0].borrow_date, expected_return: borrows[0].expected_return, actual_return: "", trans_status: "Borrowed", notes: "งานนำเสนอแผนงานประจำปี" },
+        { trans_id: borrows[1].trans_id, timestamp: borrows[1].borrow_date + " 14:15", item_id: borrows[1].item_id, borrower_name: borrows[1].borrower_name, borrower_dept: borrows[1].borrower_dept, borrower_contact: "089-333-4444", borrow_date: borrows[1].borrow_date, expected_return: borrows[1].expected_return, actual_return: "", trans_status: "Borrowed", notes: "บันทึกเสียงอบรมพนักงานใหม่" },
+        { trans_id: "TRX-0985", timestamp: getOffsetDate(-14) + " 10:00", item_id: "IT-001", borrower_name: "วิชัย สมบูรณ์", borrower_dept: "IT Support & Infra", borrower_contact: "082-555-6666", borrow_date: getOffsetDate(-14), expected_return: getOffsetDate(-10), actual_return: getOffsetDate(-10) + " 16:30", trans_status: "Returned", notes: "คืน: สภาพสมบูรณ์พร้อมสายชาร์จแท้" },
+        { trans_id: "TRX-0972", timestamp: getOffsetDate(-20) + " 13:20", item_id: "IT-003", borrower_name: "ดนัย ภักดี", borrower_dept: "Sales & Business Dev", borrower_contact: "086-777-8888", borrow_date: getOffsetDate(-20), expected_return: getOffsetDate(-18), actual_return: getOffsetDate(-18) + " 17:00", trans_status: "Returned", notes: "คืน: อุปกรณ์ทำงานปกติ ไม่มีรอย" }
+      ];
     }
+
+    const state = {
+      webAppUrl: initialUrl,
+      isLive: !!initialUrl,
+      items: JSON.parse(JSON.stringify(INITIAL_DEMO_ITEMS)),
+      activeBorrows: getInitialDemoBorrows(),
+      allLogs: getInitialDemoLogs(),
+      categories: [...INITIAL_DEMO_CATEGORIES],
+      departments: [...INITIAL_DEMO_DEPTS],
+      selectedBorrowItems: [],
+      selectedReturnTransIds: [],
+      isRefreshing: false,
+      autoReloadTimer: null
+    };
 
     function isItemBorrowed(item) {
       if (!item) return false;
@@ -1001,32 +1038,6 @@
       });
     }
 
-    const INITIAL_DEMO_ITEMS = [
-      { item_id: "IT-001", item_name: "Dell Latitude 5430 (i7/16GB)", category: "Laptop", serial_number: "DL-5430-891", status: "Available" },
-      { item_id: "IT-002", item_name: "MacBook Air M2 (16GB/512GB)", category: "Laptop", serial_number: "MBA-M2-044", status: "Borrowed" },
-      { item_id: "IT-003", item_name: "Epson EB-X06 Projector 3600lm", category: "Projector", serial_number: "EP-X06-203", status: "Available" },
-      { item_id: "IT-004", item_name: "Dell UltraSharp 27-inch 4K", category: "Monitor", serial_number: "DELL-U27-91", status: "Available" },
-      { item_id: "IT-005", item_name: "Rode Wireless GO II Dual Mic", category: "Audio", serial_number: "RODE-WGO-88", status: "Borrowed" },
-      { item_id: "IT-006", item_name: "USB-C Multiport Hub 8-in-1", category: "Adapter", serial_number: "HUB-8IN1-12", status: "Available" }
-    ];
-
-    function getInitialDemoBorrows() {
-      return [
-        { trans_id: "TRX-1001", item_id: "IT-002", borrower_name: "กิตติศักดิ์ พัฒนพงศ์", borrower_dept: "Marketing & Branding", borrow_date: getOffsetDate(-6), expected_return: getOffsetDate(-2) },
-        { trans_id: "TRX-1002", item_id: "IT-005", borrower_name: "สุวิมล แสงทอง", borrower_dept: "HR & Training", borrow_date: getOffsetDate(-1), expected_return: getOffsetDate(4) }
-      ];
-    }
-
-    function getInitialDemoLogs() {
-      const borrows = getInitialDemoBorrows();
-      return [
-        { trans_id: borrows[0].trans_id, timestamp: borrows[0].borrow_date + " 09:30", item_id: borrows[0].item_id, borrower_name: borrows[0].borrower_name, borrower_dept: borrows[0].borrower_dept, borrower_contact: "081-111-2222", borrow_date: borrows[0].borrow_date, expected_return: borrows[0].expected_return, actual_return: "", trans_status: "Borrowed", notes: "งานนำเสนอแผนงานประจำปี" },
-        { trans_id: borrows[1].trans_id, timestamp: borrows[1].borrow_date + " 14:15", item_id: borrows[1].item_id, borrower_name: borrows[1].borrower_name, borrower_dept: borrows[1].borrower_dept, borrower_contact: "089-333-4444", borrow_date: borrows[1].borrow_date, expected_return: borrows[1].expected_return, actual_return: "", trans_status: "Borrowed", notes: "บันทึกเสียงอบรมพนักงานใหม่" },
-        { trans_id: "TRX-0985", timestamp: getOffsetDate(-14) + " 10:00", item_id: "IT-001", borrower_name: "วิชัย สมบูรณ์", borrower_dept: "IT Support & Infra", borrower_contact: "082-555-6666", borrow_date: getOffsetDate(-14), expected_return: getOffsetDate(-10), actual_return: getOffsetDate(-10) + " 16:30", trans_status: "Returned", notes: "คืน: สภาพสมบูรณ์พร้อมสายชาร์จแท้" },
-        { trans_id: "TRX-0972", timestamp: getOffsetDate(-20) + " 13:20", item_id: "IT-003", borrower_name: "ดนัย ภักดี", borrower_dept: "Sales & Business Dev", borrower_contact: "086-777-8888", borrow_date: getOffsetDate(-20), expected_return: getOffsetDate(-18), actual_return: getOffsetDate(-18) + " 17:00", trans_status: "Returned", notes: "คืน: อุปกรณ์ทำงานปกติ ไม่มีรอย" }
-      ];
-    }
-
     /* Central API Router */
     async function callAPI(action, payload = {}, isBackground = false) {
       if (state.webAppUrl && state.webAppUrl.trim() !== "") {
@@ -1046,6 +1057,9 @@
           }
 
           const result = await response.json();
+          state.isLive = true;
+          updateConnectionStatus(true);
+
           if (result && result.status === "error" && result.message && String(result.message).startsWith("Invalid action")) {
             showNotification(
               `⚠️ โค้ดใน Google Apps Script ยังเป็นเวอร์ชันเดิม (ยังไม่รู้จักคำสั่ง ${action}): กรุณานำโค้ดล่าสุดไปวางใน Code.gs แล้ว Deploy เป็น 'New version'`,
@@ -1055,17 +1069,22 @@
           return result;
         } catch (err) {
           console.warn("GAS Connection failed, fallback to local simulator:", err);
+          state.isLive = false;
+          updateConnectionStatus(false);
           if (!isBackground) {
             if (err.message === "AUTH_401" || String(err).includes("Failed to fetch")) {
               showNotification(
-                "⚠️ สิทธิ์เข้าถึงไม่ถูกต้อง (Error 401 / CORS): ใน Apps Script ตอน Deploy ต้องตั้งค่า 'Who has access' เป็น 'Anyone (ทุกคน)'",
-                "error"
+                "⚠️ เชื่อมต่อ Google Sheets ไม่สำเร็จ (ตรวจสอบ URL หรือสิทธิ์ Who has access: Anyone) ระบบสลับใช้โหมดจำลองชั่วคราว",
+                "warning"
               );
             } else {
               showNotification("เชื่อมต่อ Apps Script ขัดข้อง สลับใช้งานโหมดจำลองชั่วคราว", "warning");
             }
           }
         }
+      } else {
+        state.isLive = false;
+        updateConnectionStatus(false);
       }
 
       return simulateBackend(action, payload);
@@ -1399,7 +1418,6 @@
           syncItemStatuses();
           renderAll();
           updateLastSyncedTime();
-          updateConnectionStatus(true);
           if (showToast) {
             showNotification("รีเฟรชข้อมูลล่าสุดเรียบร้อยแล้ว", "success");
           }
@@ -1426,7 +1444,7 @@
       if (el) el.innerText = `อัปเดต: ${timeStr} น.`;
     }
 
-    function changeAutoReloadInterval(seconds) {
+    function changeAutoReloadInterval(seconds, silent = false) {
       if (state.autoReloadTimer) {
         clearInterval(state.autoReloadTimer);
         state.autoReloadTimer = null;
@@ -1437,9 +1455,13 @@
         state.autoReloadTimer = setInterval(() => {
           refreshData(false);
         }, sec * 1000);
-        showNotification(`เปิดระบบอัปเดตตลอดเวลา (ทุก ${sec >= 60 ? (sec/60) + ' นาที' : sec + ' วินาที'})`, "info");
+        if (!silent) {
+          showNotification(`เปิดระบบอัปเดตตลอดเวลา (ทุก ${sec >= 60 ? (sec/60) + ' นาที' : sec + ' วินาที'})`, "info");
+        }
       } else {
-        showNotification("ปิดการรีเฟรชข้อมูลอัตโนมัติแล้ว", "info");
+        if (!silent) {
+          showNotification("ปิดการรีเฟรชข้อมูลอัตโนมัติแล้ว", "info");
+        }
       }
     }
 
@@ -1498,7 +1520,7 @@
       }
 
       container.innerHTML = filtered.map(item => `
-        <div onclick="addSelectedItem('${item.item_id}'); document.getElementById('searchableItemDropdownMenu').classList.add('hidden');" 
+        <div onclick="addSelectedItem('${escapeQuotes(item.item_id)}'); document.getElementById('searchableItemDropdownMenu').classList.add('hidden');" 
              class="p-2.5 hover:bg-brand-50 rounded-xl cursor-pointer transition flex items-center justify-between group border border-transparent hover:border-brand-200">
           <div>
             <div class="font-semibold text-slate-800 text-xs group-hover:text-brand-700">${item.item_name}</div>
@@ -1936,7 +1958,7 @@
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-brand-50 border border-brand-200 text-brand-800 shadow-sm animate-fadeIn">
             <span class="font-mono font-bold text-[11px] text-brand-600">[${id}]</span>
             <span class="max-w-[180px] truncate">${name}</span>
-            <button type="button" onclick="removeSelectedItem('${id}')" class="text-slate-400 hover:text-rose-600 font-bold ml-1 rounded p-0.5 transition" title="นำชิ้นนี้ออก">✕</button>
+            <button type="button" onclick="removeSelectedItem('${escapeQuotes(id)}')" class="text-slate-400 hover:text-rose-600 font-bold ml-1 rounded p-0.5 transition" title="นำชิ้นนี้ออก">✕</button>
           </span>
         `;
       }).join("");
@@ -2138,15 +2160,15 @@
           `"${log.trans_id || ''}"`,
           `"${log.timestamp || ''}"`,
           `"${log.item_id || ''}"`,
-          `"${itemName.replace(/"/g, '""')}"`,
-          `"${(log.borrower_name || '').replace(/"/g, '""')}"`,
-          `"${(log.borrower_dept || '').replace(/"/g, '""')}"`,
-          `"${(log.borrower_contact || '').replace(/"/g, '""')}"`,
+          `"${String(itemName).replace(/"/g, '""')}"`,
+          `"${String(log.borrower_name || '').replace(/"/g, '""')}"`,
+          `"${String(log.borrower_dept || '').replace(/"/g, '""')}"`,
+          `"${String(log.borrower_contact || '').replace(/"/g, '""')}"`,
           `"${log.borrow_date || ''}"`,
           `"${log.expected_return || ''}"`,
           `"${log.actual_return || ''}"`,
           `"${log.trans_status || ''}"`,
-          `"${(log.notes || '').replace(/"/g, '""')}"`
+          `"${String(log.notes || '').replace(/"/g, '""')}"`
         ].join(",");
       });
 
@@ -2154,7 +2176,7 @@
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = getOffsetDate(0);
       link.setAttribute("href", url);
       link.setAttribute("download", `it_asset_history_${todayStr}.csv`);
       document.body.appendChild(link);
@@ -2202,7 +2224,7 @@
         return `
           <tr class="hover:bg-slate-50/80 transition ${isSelected ? 'bg-emerald-50/50' : ''}">
             <td class="py-3 px-3 text-center">
-              <input type="checkbox" onchange="toggleReturnSelection('${b.trans_id}')" ${isSelected ? 'checked' : ''} class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer">
+              <input type="checkbox" onchange="toggleReturnSelection('${escapeQuotes(b.trans_id)}')" ${isSelected ? 'checked' : ''} class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer">
             </td>
             <td class="py-3 px-4 font-mono font-medium text-xs text-slate-700">${b.trans_id}</td>
             <td class="py-3 px-4">
@@ -2223,10 +2245,10 @@
             </td>
             <td class="py-3 px-4 text-right">
               <div class="flex items-center justify-end gap-1.5">
-                <button type="button" onclick="openAiInspectModal('${b.trans_id}')" class="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs transition" title="ถ่ายภาพให้ AI ตรวจสภาพ">
+                <button type="button" onclick="openAiInspectModal('${escapeQuotes(b.trans_id)}')" class="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs transition" title="ถ่ายภาพให้ AI ตรวจสภาพ">
                   📷 ตรวจสภาพ
                 </button>
-                <button type="button" onclick="requestReturnItem('${b.trans_id}', '${escapeQuotes(itemInfo.item_name)}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition">
+                <button type="button" onclick="requestReturnItem('${escapeQuotes(b.trans_id)}', '${escapeQuotes(itemInfo.item_name)}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition">
                   รับคืน
                 </button>
               </div>
@@ -2379,6 +2401,14 @@
       renderQuickAvailableList();
     }
 
+    function handleResetBorrowForm() {
+      clearSelectedBorrowItems();
+      setTimeout(() => {
+        document.getElementById("borrowerDept").value = "";
+        setDefaultReturnDate();
+      }, 10);
+    }
+
     function renderQuickAvailableList() {
       const container = document.getElementById("quickAvailableContainer");
       const quickSearch = (document.getElementById("quickAvailableSearch")?.value || "").toLowerCase().trim();
@@ -2401,7 +2431,7 @@
       container.innerHTML = filtered.map(i => {
         const isSelected = state.selectedBorrowItems.includes(i.item_id);
         return `
-          <div onclick="selectQuickItem('${i.item_id}')" class="p-2.5 rounded-xl border ${isSelected ? 'border-brand-500 bg-brand-50/70' : 'border-slate-100 hover:border-brand-300 hover:bg-brand-50/40'} cursor-pointer transition flex items-center justify-between group">
+          <div onclick="selectQuickItem('${escapeQuotes(i.item_id)}')" class="p-2.5 rounded-xl border ${isSelected ? 'border-brand-500 bg-brand-50/70' : 'border-slate-100 hover:border-brand-300 hover:bg-brand-50/40'} cursor-pointer transition flex items-center justify-between group">
             <div>
               <p class="font-medium text-xs ${isSelected ? 'text-brand-900 font-semibold' : 'text-slate-900 group-hover:text-brand-700'}">${i.item_name}</p>
               <p class="text-[10px] text-slate-400 font-mono">${i.item_id} · ${i.category}</p>
@@ -2745,7 +2775,7 @@ ${inventoryContext}`;
               <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-200 text-purple-800 mb-1">อุปกรณ์ที่แนะนำ</span>
               <h4 class="font-bold text-slate-900 text-sm">[${parsed.recommendedItemId}] ${parsed.recommendedItemName}</h4>
             </div>
-            <button onclick="applyAiRecommendation('${parsed.recommendedItemId}', ${parsed.suggestedReturnDays}, '${escapeQuotes(promptText)}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+            <button onclick="applyAiRecommendation('${escapeQuotes(parsed.recommendedItemId)}', ${parsed.suggestedReturnDays}, '${escapeQuotes(promptText)}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
               ใช้รายการนี้ทันที
             </button>
           </div>
@@ -2773,10 +2803,8 @@ ${inventoryContext}`;
       }
 
       if (returnDays && returnDays > 0) {
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + returnDays);
         const dateInput = document.getElementById("expectedReturnDate");
-        if (dateInput) dateInput.value = targetDate.toISOString().split('T')[0];
+        if (dateInput) dateInput.value = getOffsetDate(returnDays);
       }
 
       showNotification(`เพิ่มอุปกรณ์ [${itemId}] ลงในรายการยืมเรียบร้อยแล้ว`, "success");
@@ -3579,4 +3607,131 @@ function handleUpdateItem(data) {
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}
+}`;
+
+    /* =========================================================
+     * SETUP MODAL, INITIALIZATION & HELPER FUNCTIONS
+     * ========================================================= */
+    function updateConnectionStatus(connected) {
+      const dot = document.getElementById("connStatusDot");
+      const text = document.getElementById("connStatusText");
+      if (!dot || !text) return;
+
+      if (connected && state.webAppUrl && state.isLive) {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        text.innerText = "เชื่อมต่อ Google Sheets แล้ว (Real-time)";
+        text.className = "text-emerald-700 font-semibold";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-amber-500";
+        text.innerText = "โหมดจำลอง (Demo Mode)";
+        text.className = "text-amber-700 font-medium";
+      }
+    }
+
+    function openSetupModal() {
+      const urlInput = document.getElementById("inputWebAppUrl");
+      if (urlInput) urlInput.value = state.webAppUrl || "";
+      const codeBlock = document.getElementById("gasCodeBlock");
+      if (codeBlock) codeBlock.textContent = SELF_HEALING_GAS_CODE;
+      document.getElementById("setupModal").classList.remove("hidden");
+    }
+
+    function closeSetupModal() {
+      document.getElementById("setupModal").classList.add("hidden");
+    }
+
+    async function saveWebAppUrl() {
+      const val = document.getElementById("inputWebAppUrl").value.trim();
+      if (!val) {
+        showNotification("กรุณาวาง Web App URL ที่ได้จากการ Deploy", "warning");
+        return;
+      }
+      state.webAppUrl = val;
+      state.isLive = true;
+      localStorage.setItem(STORAGE_KEY_URL, val);
+      closeSetupModal();
+      showNotification("บันทึก Web App URL เรียบร้อย กำลังดึงข้อมูลจาก Google Sheets...", "info");
+      await refreshData(true);
+    }
+
+    async function resetToDemoMode() {
+      state.webAppUrl = "";
+      state.isLive = false;
+      localStorage.setItem(STORAGE_KEY_URL, "");
+      state.items = JSON.parse(JSON.stringify(INITIAL_DEMO_ITEMS));
+      state.activeBorrows = getInitialDemoBorrows();
+      state.allLogs = getInitialDemoLogs();
+      state.categories = [...INITIAL_DEMO_CATEGORIES];
+      state.departments = [...INITIAL_DEMO_DEPTS];
+      closeSetupModal();
+      updateConnectionStatus(false);
+      renderAll();
+      showNotification("สลับมาใช้โหมดจำลอง (Demo Mode) เรียบร้อยแล้ว", "info");
+    }
+
+    function copyGasCode() {
+      const textarea = document.createElement("textarea");
+      textarea.value = SELF_HEALING_GAS_CODE;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        showNotification("คัดลอกโค้ด Google Apps Script (Code.gs) เรียบร้อยแล้ว!", "success");
+      } catch (err) {
+        showNotification("ไม่สามารถคัดลอกโค้ดได้", "error");
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function openAddItemModal() {
+      renderCategoryDropdowns();
+      const nextNum = state.items.length + 1;
+      const suggestedId = "IT-" + String(nextNum).padStart(3, "0");
+      const idInput = document.getElementById("newItemId");
+      if (idInput && !idInput.value) idInput.value = suggestedId;
+      document.getElementById("addItemModal").classList.remove("hidden");
+    }
+
+    function closeAddItemModal() {
+      document.getElementById("addItemModal").classList.add("hidden");
+    }
+
+    function setDefaultReturnDate() {
+      const dateInput = document.getElementById("expectedReturnDate");
+      if (dateInput) {
+        dateInput.min = getOffsetDate(0);
+        dateInput.value = getOffsetDate(3);
+      }
+    }
+
+    // Auto-sync when user switches back to this tab or focuses window
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && state.webAppUrl) {
+        refreshData(false);
+      }
+    });
+
+    window.addEventListener("focus", () => {
+      if (state.webAppUrl) {
+        refreshData(false);
+      }
+    });
+
+    // Initialize Application on Load
+    window.addEventListener("DOMContentLoaded", () => {
+      const codeBlock = document.getElementById("gasCodeBlock");
+      if (codeBlock) codeBlock.textContent = SELF_HEALING_GAS_CODE;
+
+      setDefaultReturnDate();
+      renderAll();
+      refreshData(false);
+
+      const autoSelect = document.getElementById("autoReloadSelect");
+      const initialInterval = autoSelect ? autoSelect.value : 30;
+      changeAutoReloadInterval(initialInterval, true);
+    });
+  </script>
+</body>
+</html>
