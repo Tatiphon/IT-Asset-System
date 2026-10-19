@@ -79,10 +79,11 @@
         <div class="hidden sm:flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-2 rounded-xl text-xs text-slate-600 transition" title="ตั้งเวลารีเฟรชข้อมูลอัตโนมัติ">
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <select id="autoReloadSelect" onchange="changeAutoReloadInterval(this.value)" class="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer text-xs">
-            <option value="0">รีเฟรชเอง</option>
-            <option value="30">ทุก 30 วิ</option>
-            <option value="60" selected>ทุก 1 นาที</option>
+            <option value="15">อัปเดตตลอดเวลา (ทุก 15 วิ)</option>
+            <option value="30" selected>ทุก 30 วิ (แนะนำ)</option>
+            <option value="60">ทุก 1 นาที</option>
             <option value="300">ทุก 5 นาที</option>
+            <option value="0">รีเฟรชเอง</option>
           </select>
         </div>
 
@@ -906,10 +907,17 @@
      * APPLICATION STATE & CONFIGURATION
      * ========================================================= */
     const STORAGE_KEY_URL = "it_asset_webapp_url";
-    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxypntnPBTPthGdfnCVj5bL6zAIQSAsNqzQ7LMsRlo5wMiTRUmug3mSJXUWNiRHQ4pE/exec";
+    const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbEj-79eHal39qVlnENM2GxRTn5C1TVXYjE8IxehEKXokpOHh5VtfHCbuc7_PSr4xO0/exec";
+    const OLD_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxypntnPBTPthGdfnCVj5bL6zAIQSAsNqzQ7LMsRlo5wMiTRUmug3mSJXUWNiRHQ4pE/exec";
 
-    const storedUrl = localStorage.getItem(STORAGE_KEY_URL);
-    const initialUrl = (storedUrl === "DEMO") ? "" : (storedUrl || DEFAULT_WEB_APP_URL);
+    // อัปเดตและล้างแคช URL เดิมที่อาจค้างอยู่ใน localStorage ให้อัตโนมัติ
+    let storedUrl = localStorage.getItem(STORAGE_KEY_URL);
+    if (!storedUrl || storedUrl === OLD_WEB_APP_URL || storedUrl.includes("AKfycbxypntn") || storedUrl === "DEMO") {
+      storedUrl = DEFAULT_WEB_APP_URL;
+      localStorage.setItem(STORAGE_KEY_URL, DEFAULT_WEB_APP_URL);
+    }
+
+    const initialUrl = storedUrl || DEFAULT_WEB_APP_URL;
 
     const state = {
       webAppUrl: initialUrl,
@@ -1016,7 +1024,7 @@
     }
 
     /* Central API Router */
-    async function callAPI(action, payload = {}) {
+    async function callAPI(action, payload = {}, isBackground = false) {
       if (state.webAppUrl && state.webAppUrl.trim() !== "") {
         try {
           const response = await fetch(state.webAppUrl, {
@@ -1033,16 +1041,25 @@
             throw new Error(`HTTP Error ${response.status}`);
           }
 
-          return await response.json();
+          const result = await response.json();
+          if (result && result.status === "error" && result.message && String(result.message).startsWith("Invalid action")) {
+            showNotification(
+              `⚠️ โค้ดใน Google Apps Script ยังเป็นเวอร์ชันเดิม (ยังไม่รู้จักคำสั่ง ${action}): กรุณานำโค้ดล่าสุดไปวางใน Code.gs แล้ว Deploy เป็น 'New version'`,
+              "warning"
+            );
+          }
+          return result;
         } catch (err) {
           console.warn("GAS Connection failed, fallback to local simulator:", err);
-          if (err.message === "AUTH_401" || String(err).includes("Failed to fetch")) {
-            showNotification(
-              "⚠️ สิทธิ์เข้าถึงไม่ถูกต้อง (Error 401 / CORS): ใน Apps Script ตอน Deploy ต้องตั้งค่า 'Who has access' เป็น 'Anyone (ทุกคน)'",
-              "error"
-            );
-          } else {
-            showNotification("เชื่อมต่อ Apps Script ขัดข้อง สลับใช้งานโหมดจำลองชั่วคราว", "warning");
+          if (!isBackground) {
+            if (err.message === "AUTH_401" || String(err).includes("Failed to fetch")) {
+              showNotification(
+                "⚠️ สิทธิ์เข้าถึงไม่ถูกต้อง (Error 401 / CORS): ใน Apps Script ตอน Deploy ต้องตั้งค่า 'Who has access' เป็น 'Anyone (ทุกคน)'",
+                "error"
+              );
+            } else {
+              showNotification("เชื่อมต่อ Apps Script ขัดข้อง สลับใช้งานโหมดจำลองชั่วคราว", "warning");
+            }
           }
         }
       }
@@ -1356,7 +1373,7 @@
       reloadIcons.forEach(icon => icon.classList.add("animate-spin"));
 
       try {
-        const res = await callAPI("getInitialData");
+        const res = await callAPI("getInitialData", {}, !showToast);
         if (res.status === "success") {
           state.items = res.items || [];
           state.activeBorrows = res.activeBorrows || [];
@@ -1378,15 +1395,16 @@
           syncItemStatuses();
           renderAll();
           updateLastSyncedTime();
+          updateConnectionStatus(true);
           if (showToast) {
             showNotification("รีเฟรชข้อมูลล่าสุดเรียบร้อยแล้ว", "success");
           }
         } else {
-          showNotification(res.message || "ไม่สามารถดึงข้อมูลได้", "error");
+          if (showToast) showNotification(res.message || "ไม่สามารถดึงข้อมูลได้", "error");
         }
       } catch (err) {
         console.error(err);
-        showNotification("การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว", "error");
+        if (showToast) showNotification("การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว", "error");
       } finally {
         state.isRefreshing = false;
         reloadIcons.forEach(icon => icon.classList.remove("animate-spin"));
@@ -1415,7 +1433,7 @@
         state.autoReloadTimer = setInterval(() => {
           refreshData(false);
         }, sec * 1000);
-        showNotification(`ตั้งเวลารีเฟรชอัตโนมัติทุก ${sec >= 60 ? (sec/60) + ' นาที' : sec + ' วินาที'}`, "info");
+        showNotification(`เปิดระบบอัปเดตตลอดเวลา (ทุก ${sec >= 60 ? (sec/60) + ' นาที' : sec + ' วินาที'})`, "info");
       } else {
         showNotification("ปิดการรีเฟรชข้อมูลอัตโนมัติแล้ว", "info");
       }
@@ -1666,6 +1684,17 @@
             selectDepartment(newName);
           }
         } else {
+          if (res.message && res.message.includes("Invalid action")) {
+            state.departments[idx] = newName;
+            editingDeptIndex = -1;
+            renderDeptManageList();
+            renderDepartmentDropdown();
+            if (document.getElementById("borrowerDept").value === oldName) {
+              selectDepartment(newName);
+            }
+            showNotification(`แก้ไขชื่อแผนกในหน้าเว็บแล้ว (อย่าลืมอัปเดต Code.gs เป็น New version เพื่อบันทึกลงชีต)`, "warning");
+            return;
+          }
           showNotification(res.message, "error");
         }
       } catch (e) {
@@ -1682,6 +1711,13 @@
           renderDeptManageList();
           renderDepartmentDropdown();
         } else {
+          if (res.message && res.message.includes("Invalid action")) {
+            state.departments = state.departments.filter(d => d !== deptName);
+            renderDeptManageList();
+            renderDepartmentDropdown();
+            showNotification(`ลบแผนกออกจากหน้าเว็บแล้ว (อย่าลืมอัปเดต Code.gs เป็น New version เพื่อบันทึกลงชีต)`, "warning");
+            return;
+          }
           showNotification(res.message, "error");
         }
       } catch (e) {
@@ -1707,6 +1743,15 @@
           renderDepartmentDropdown();
           selectDepartment(val);
         } else {
+          if (res.message && res.message.includes("Invalid action")) {
+            if (!state.departments.includes(val)) state.departments.push(val);
+            input.value = "";
+            renderDeptManageList();
+            renderDepartmentDropdown();
+            selectDepartment(val);
+            showNotification(`เพิ่มแผนก "${val}" ในหน้าเว็บเรียบร้อย (อย่าลืมอัปเดต Code.gs เป็น New version เพื่อบันทึกลงชีต)`, "warning");
+            return;
+          }
           showNotification(res.message, "error");
         }
       } catch (e) {
@@ -3615,7 +3660,7 @@ function jsonResponse(obj) {
       const text = document.getElementById("connStatusText");
       if (isLive) {
         dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-        text.innerText = "เชื่อมต่อ Google Sheets (Live)";
+        text.innerText = "เชื่อมต่อ Google Sheets (Live ตลอดเวลา)";
       } else {
         dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
         text.innerText = "โหมดทดลอง (Demo Mode พร้อมใช้งาน)";
@@ -3644,9 +3689,19 @@ function jsonResponse(obj) {
       state.activeBorrows = getInitialDemoBorrows();
       state.allLogs = getInitialDemoLogs();
 
+      // อัปเดตข้อมูลทันทีเมื่อสลับกลับมาที่แท็บเว็บนี้ (Focus / Visibility Sync)
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          refreshData(false);
+        }
+      });
+      window.addEventListener("focus", () => {
+        refreshData(false);
+      });
+
       if (state.webAppUrl && state.webAppUrl.trim() !== "") {
         updateConnectionStatus(true);
-        refreshData();
+        refreshData(false);
       } else {
         updateConnectionStatus(false);
         renderAll();
@@ -3656,6 +3711,8 @@ function jsonResponse(obj) {
       const autoSelect = document.getElementById("autoReloadSelect");
       if (autoSelect && autoSelect.value) {
         changeAutoReloadInterval(autoSelect.value);
+      } else {
+        changeAutoReloadInterval(30);
       }
     });
   </script>
