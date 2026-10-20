@@ -3,20 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบยืม-คืนอุปกรณ์ไอที (IT Asset Borrow & Return)</title>
+  <title>ระบบยืม-คืนอุปกรณ์ไอที</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
+            tcc: {
+              50: '#f0f7fc',
+              100: '#e0eff9',
+              200: '#b9dff3',
+              300: '#7cc4eb',
+              400: '#38a5df',
+              500: '#0f88cd',
+              600: '#005ba6', /* TCC Official Royal Blue */
+              700: '#004c8c',
+              800: '#003f75',
+              900: '#003562',
+              950: '#002140',
+            },
+            gold: {
+              50: '#fdfbf2',
+              100: '#faf5de',
+              200: '#f5e9b8',
+              300: '#edd688',
+              400: '#e2bc55',
+              500: '#c59218', /* TCC Crest Gold */
+              600: '#af7912',
+              700: '#8c5911',
+              800: '#734614',
+              900: '#613a16',
             }
           }
         }
@@ -54,18 +71,29 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
+  <!-- Top Accent Bar (Sky Blue Theme) -->
+  <div class="h-1.5 w-full bg-gradient-to-r from-sky-400 via-sky-500 to-blue-500 shadow-sm"></div>
+
   <!-- Top Navigation Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-2 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
+        <!-- Official TCC Shield Emblem Image from Upload Only -->
+        <div class="relative w-12 h-14 shrink-0 drop-shadow flex items-center justify-center">
+          <img src="LOGO The Thai chamber of commerce_2.png" 
+               alt="โลโก้หอการค้าไทย" 
+               class="w-full h-full object-contain" />
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">ระบบยืม-คืนอุปกรณ์ไอที</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">ระบบยืม-คืนอุปกรณ์ไอที</h1>
+            <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-300">
+              TCC IT Asset
+            </span>
+          </div>
           <p class="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
+            <span class="text-tcc-700 font-semibold hidden sm:inline">ฝ่ายเทคโนโลยีสารสนเทศ</span>
+            <span class="hidden sm:inline text-slate-300">|</span>
             <span id="connStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span id="connStatusText">กำลังเชื่อมต่อฐานข้อมูล...</span>
             <span class="text-slate-300">|</span>
@@ -78,7 +106,7 @@
       <div class="flex items-center gap-2">
         <!-- Auto-Reload Selector -->
         <div class="hidden sm:flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-2 rounded-xl text-xs text-slate-600 transition" title="ตั้งเวลารีเฟรชข้อมูลอัตโนมัติ">
-          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <svg class="w-3.5 h-3.5 text-tcc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <select id="autoReloadSelect" onchange="changeAutoReloadInterval(this.value)" class="bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer text-xs">
             <option value="15">อัปเดตตลอดเวลา (ทุก 15 วิ)</option>
             <option value="30" selected>ทุก 30 วิ (แนะนำ)</option>
@@ -89,19 +117,19 @@
         </div>
 
         <!-- Global Refresh Button -->
-        <button id="btnGlobalReload" onclick="triggerManualReload()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 transition active:scale-95" title="รีเฟรชข้อมูลล่าสุด">
-          <svg id="reloadIcon" class="w-4 h-4 text-brand-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="btnGlobalReload" onclick="triggerManualReload()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 transition active:scale-95 shadow-sm" title="รีเฟรชข้อมูลล่าสุด">
+          <svg id="reloadIcon" class="w-4 h-4 text-tcc-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
           <span class="hidden sm:inline">รีเฟรช</span>
         </button>
 
-        <button onclick="openSetupModal()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 transition">
+        <button onclick="openSetupModal()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 transition shadow-sm">
           <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           <span class="hidden sm:inline">เชื่อมต่อ Google Sheets</span>
           <span class="sm:hidden">ตั้งค่า</span>
         </button>
-        <button onclick="openAddItemModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-sm flex items-center gap-1.5 transition">
+        <button onclick="openAddItemModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-tcc-600 hover:bg-tcc-700 text-white shadow-md shadow-tcc-600/20 flex items-center gap-1.5 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           <span>เพิ่มอุปกรณ์</span>
         </button>
@@ -116,42 +144,42 @@
     
     <!-- Top Statistics Dashboard -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between hover:border-tcc-300 transition">
         <div>
-          <p class="text-xs font-medium text-slate-500">อุปกรณ์ทั้งหมด</p>
-          <p id="statTotalItems" class="text-2xl font-bold text-slate-900 mt-0.5">0</p>
+          <p class="text-xs font-semibold text-slate-500">อุปกรณ์ทั้งหมด</p>
+          <p id="statTotalItems" class="text-2xl font-bold text-tcc-900 mt-0.5">0</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-xl bg-tcc-50 text-tcc-600 border border-tcc-100 flex items-center justify-center">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
         </div>
       </div>
 
-      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between hover:border-emerald-300 transition">
         <div>
-          <p class="text-xs font-medium text-slate-500">พร้อมให้ยืม</p>
+          <p class="text-xs font-semibold text-slate-500">พร้อมให้ยืม</p>
           <p id="statAvailableItems" class="text-2xl font-bold text-emerald-600 mt-0.5">0</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
       </div>
 
-      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between hover:border-gold-300 transition">
         <div>
-          <p class="text-xs font-medium text-slate-500">กำลังถูกยืม</p>
-          <p id="statBorrowedItems" class="text-2xl font-bold text-amber-600 mt-0.5">0</p>
+          <p class="text-xs font-semibold text-slate-500">กำลังถูกยืม</p>
+          <p id="statBorrowedItems" class="text-2xl font-bold text-gold-700 mt-0.5">0</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-xl bg-gold-50 text-gold-600 border border-gold-200 flex items-center justify-center">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
       </div>
 
-      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between hover:border-rose-300 transition">
         <div>
-          <p class="text-xs font-medium text-slate-500">เกินกำหนดส่ง</p>
+          <p class="text-xs font-semibold text-slate-500">เกินกำหนดส่ง</p>
           <p id="statOverdueItems" class="text-2xl font-bold text-rose-600 mt-0.5">0</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </div>
       </div>
@@ -159,8 +187,8 @@
 
     <!-- Tab Navigation -->
     <div class="flex overflow-x-auto pb-2 gap-2 border-b border-slate-200 mb-6">
-      <button onclick="switchTab('borrowTab')" id="tabBtn-borrowTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-brand-600 text-white shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      <button onclick="switchTab('borrowTab')" id="tabBtn-borrowTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-tcc-600 text-white shadow-sm border border-tcc-700">
+        <svg class="w-4 h-4 text-gold-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         <span>แบบฟอร์มยืมอุปกรณ์</span>
       </button>
 
@@ -181,8 +209,8 @@
         <span id="tabBadgeHistory" class="px-1.5 py-0.5 text-[10px] rounded-full bg-slate-200 text-slate-700 font-semibold">0</span>
       </button>
 
-      <button onclick="switchTab('aiAssistantTab')" id="tabBtn-aiAssistantTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition text-purple-700 bg-purple-50 hover:bg-purple-100">
-        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <button onclick="switchTab('aiAssistantTab')" id="tabBtn-aiAssistantTab" class="tab-button px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition text-tcc-700 bg-tcc-50 hover:bg-tcc-100 border border-tcc-200/60">
+        <svg class="w-4 h-4 text-gold-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         <span>Gemini AI Assistant</span>
       </button>
     </div>
@@ -196,11 +224,15 @@
           <div>
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
               <div>
-                <h2 class="text-lg font-bold text-slate-900">บันทึกการขอยืมอุปกรณ์</h2>
-                <p class="text-xs text-slate-500">กรอกข้อมูลผู้ยืมและค้นหาเลือกอุปกรณ์ที่ต้องการ (ยืมได้พร้อมกันหลายชิ้น)</p>
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-tcc-600"></span>
+                  <h2 class="text-lg font-bold text-slate-900">บันทึกการขอยืมอุปกรณ์</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">กรอกข้อมูลผู้ยืมและค้นหาเลือกอุปกรณ์ที่ต้องการ (ยืมได้พร้อมกันหลายชิ้น)</p>
               </div>
-              <button type="button" onclick="openAiRecommenderQuick()" class="text-xs text-purple-600 font-semibold bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl flex items-center gap-1 transition">
-                <span>✨ ให้ AI ช่วยเลือกอุปกรณ์</span>
+              <button type="button" onclick="openAiRecommenderQuick()" class="text-xs text-tcc-700 font-semibold bg-tcc-50 hover:bg-tcc-100 border border-tcc-200 px-3 py-1.5 rounded-xl flex items-center gap-1 transition">
+                <span class="text-gold-500">✨</span>
+                <span>ให้ AI ช่วยเลือกอุปกรณ์</span>
               </button>
             </div>
 
@@ -229,7 +261,7 @@
                              oninput="filterSearchableItemDropdown()"
                              onfocus="openSearchableItemDropdown()"
                              autocomplete="off"
-                             class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition">
+                             class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-tcc-500 focus:border-tcc-500 bg-white text-sm transition">
                     </div>
                     <button type="button" onclick="toggleSearchableItemDropdown()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition shrink-0" title="แสดงรายการทั้งหมด">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -246,8 +278,8 @@
                 </div>
 
                 <!-- Selected Items Cart Container -->
-                <div class="mt-3 p-3 bg-slate-50/90 rounded-xl border border-slate-200 min-h-[85px]">
-                  <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200/60 text-[11px] text-slate-500">
+                <div class="mt-3 p-3 bg-tcc-50/50 rounded-xl border border-tcc-100 min-h-[85px]">
+                  <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-tcc-200/60 text-[11px] text-slate-500">
                     <span>รายการอุปกรณ์ที่จะขอยืมในรอบนี้ (คลิกอุปกรณ์ด้านขวาเพื่อเลือกเพิ่มได้):</span>
                     <button type="button" onclick="clearSelectedBorrowItems()" class="text-rose-500 hover:text-rose-700 font-medium hover:underline text-xs">ล้างทั้งหมด</button>
                   </div>
@@ -262,7 +294,7 @@
                   <label for="borrowerName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                     2. ชื่อ-นามสกุล ผู้ยืม <span class="text-rose-500">*</span>
                   </label>
-                  <input type="text" id="borrowerName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                  <input type="text" id="borrowerName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-tcc-500 focus:border-tcc-500 text-sm">
                 </div>
 
                 <!-- Requirement 2: Searchable & Editable Department Dropdown -->
@@ -271,7 +303,7 @@
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       3. แผนก / สังกัด (ดึงจากชีต DEPARTMENTS) <span class="text-rose-500">*</span>
                     </label>
-                    <button type="button" onclick="openDeptManagementModal()" class="text-[11px] text-brand-600 hover:underline font-semibold flex items-center gap-0.5">
+                    <button type="button" onclick="openDeptManagementModal()" class="text-[11px] text-tcc-700 hover:text-tcc-900 hover:underline font-semibold flex items-center gap-0.5">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                       <span>จัดการ/เพิ่มแผนก</span>
                     </button>
@@ -285,7 +317,7 @@
                              onfocus="openDepartmentDropdown()"
                              autocomplete="off"
                              required
-                             class="w-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm transition cursor-pointer">
+                             class="w-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-tcc-500 focus:border-tcc-500 bg-white text-sm transition cursor-pointer">
                       <button type="button" onclick="toggleDepartmentDropdown()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                       </button>
@@ -306,29 +338,29 @@
                   <label for="borrowerContact" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                     4. เบอร์โทรศัพท์ หรือ LINE ID <span class="text-rose-500">*</span>
                   </label>
-                  <input type="text" id="borrowerContact" required placeholder="เช่น 081-234-5678" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                  <input type="text" id="borrowerContact" required placeholder="เช่น 081-234-5678" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-tcc-500 focus:border-tcc-500 text-sm">
                 </div>
 
                 <div>
                   <label for="expectedReturnDate" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                     5. กำหนดวันที่ส่งคืน <span class="text-rose-500">*</span>
                   </label>
-                  <input type="date" id="expectedReturnDate" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                  <input type="date" id="expectedReturnDate" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-tcc-500 focus:border-tcc-500 text-sm">
                 </div>
               </div>
 
               <div>
                 <label for="borrowPurpose" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  6. วัตถุประสงค์ในการยืม / สถานที่ใช้งาน
+                  6. วัตถุประสงค์ในการยืม / งานสัมมนา / โครงการ
                 </label>
-                <textarea id="borrowPurpose" rows="2" placeholder="เช่น นำไปใช้ออกบูธสัมมนาภายนอก, ปฏิบัติงาน WFH ชั่วคราว" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"></textarea>
+                <textarea id="borrowPurpose" rows="2" placeholder="เช่น นำไปใช้จัดประชุมคณะกรรมการหอการค้าไทย, สัมมนา WFH ชั่วคราว" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-tcc-500 focus:border-tcc-500 text-sm"></textarea>
               </div>
 
               <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button type="reset" onclick="handleResetBorrowForm()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
                   ล้างข้อมูล
                 </button>
-                <button type="submit" id="btnSubmitBorrow" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-sm flex items-center gap-2 transition">
+                <button type="submit" id="btnSubmitBorrow" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-tcc-600 hover:bg-tcc-700 active:bg-tcc-800 text-white shadow-md shadow-tcc-600/20 flex items-center gap-2 transition">
                   <span id="btnBorrowSpinner" class="hidden animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
                   <span id="btnBorrowText">ยืนยันการยืมอุปกรณ์ (0 ชิ้น)</span>
                 </button>
@@ -337,17 +369,20 @@
           </div>
         </div>
 
-        <!-- Right: Available Hardware List Quick Peek + Quick Search (Locked to Left Form Height) -->
+        <!-- Right: Available Hardware List Quick Peek (Strictly Locked to Left Form Height) -->
         <div class="relative h-[500px] lg:h-auto">
           <div class="lg:absolute lg:inset-0 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-col overflow-hidden h-full">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 shrink-0">
-              <h3 class="font-bold text-slate-900 text-sm">อุปกรณ์ที่ว่างพร้อมยืม</h3>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <h3 class="font-bold text-slate-900 text-sm">อุปกรณ์ที่ว่างพร้อมยืม</h3>
+              </div>
               <span id="quickAvailableCount" class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">0 ชิ้น</span>
             </div>
 
             <!-- Quick Search Filter for Side Card -->
             <div class="mb-3 shrink-0">
-              <input type="text" id="quickAvailableSearch" oninput="renderQuickAvailableList()" placeholder="🔍 กรองอุปกรณ์ว่างด่วน..." class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-slate-50/50">
+              <input type="text" id="quickAvailableSearch" oninput="renderQuickAvailableList()" placeholder="🔍 กรองอุปกรณ์ว่างด่วน..." class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-tcc-500 bg-slate-50/50">
             </div>
 
             <!-- Scrollable list locked strictly to the bottom of the card -->
@@ -369,8 +404,8 @@
             <p class="text-xs text-slate-500">ตรวจสอบสภาพและกดปุ่มรับคืนเมื่อได้รับอุปกรณ์เรียบร้อยแล้ว (สามารถเลือกรับคืนพร้อมกันหลายรายการได้)</p>
           </div>
           <div class="flex items-center gap-2">
-            <input type="text" id="searchReturnInput" onkeyup="filterActiveBorrows()" placeholder="ค้นหารหัส, ชื่อผู้ยืม..." class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชข้อมูลรายการยืม">
+            <input type="text" id="searchReturnInput" onkeyup="filterActiveBorrows()" placeholder="ค้นหารหัส, ชื่อผู้ยืม..." class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-tcc-500">
+            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-tcc-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชข้อมูลรายการยืม">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             </button>
           </div>
@@ -399,7 +434,7 @@
             <thead>
               <tr class="text-xs uppercase text-slate-500 bg-slate-50 border-y border-slate-100">
                 <th class="py-3 px-3 w-10 text-center">
-                  <input type="checkbox" id="selectAllReturns" onchange="toggleSelectAllReturns(this.checked)" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer" title="เลือกทั้งหมด">
+                  <input type="checkbox" id="selectAllReturns" onchange="toggleSelectAllReturns(this.checked)" class="w-4 h-4 rounded text-tcc-600 focus:ring-tcc-500 cursor-pointer" title="เลือกทั้งหมด">
                 </th>
                 <th class="py-3 px-4 font-semibold">รหัสธุรกรรม</th>
                 <th class="py-3 px-4 font-semibold">อุปกรณ์</th>
@@ -437,7 +472,7 @@
               <option value="">ทุกหมวดหมู่</option>
             </select>
             <input type="text" id="searchInventoryInput" onkeyup="filterInventory()" placeholder="ค้นหาชื่อ, S/N..." class="px-3 py-1.5 text-xs rounded-xl border border-slate-300">
-            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชข้อมูลทะเบียนอุปกรณ์">
+            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-tcc-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชข้อมูลทะเบียนอุปกรณ์">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             </button>
           </div>
@@ -482,7 +517,7 @@
               <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               <span>ส่งออก CSV</span>
             </button>
-            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชประวัติ">
+            <button onclick="triggerManualReload()" class="p-2 text-slate-500 hover:text-tcc-600 hover:bg-slate-100 rounded-xl transition" title="รีเฟรชประวัติ">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             </button>
           </div>
@@ -516,45 +551,45 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <!-- AI Recommender Card -->
-        <div class="bg-white rounded-2xl border border-purple-100 shadow-sm p-6 relative overflow-hidden">
-          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-purple-100/50 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="bg-white rounded-2xl border border-tcc-200/80 shadow-sm p-6 relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-tcc-100/50 rounded-full blur-2xl pointer-events-none"></div>
           
           <div class="flex items-center gap-2 mb-3">
-            <span class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">AI</span>
+            <span class="w-8 h-8 rounded-xl bg-tcc-600 text-gold-300 flex items-center justify-center font-bold text-xs shadow-sm">AI</span>
             <div>
-              <h3 class="font-bold text-slate-900 text-sm">Smart Equipment Matcher</h3>
-              <p class="text-[11px] text-slate-500">วิเคราะห์งานแล้วจับคู่อุปกรณ์ที่ว่างให้อัตโนมัติด้วย Gemini</p>
+              <h3 class="font-bold text-slate-900 text-sm">Smart Equipment Matcher (หอการค้าไทย)</h3>
+              <p class="text-[11px] text-slate-500">วิเคราะห์งานจัดสัมมนา/ประชุมแล้วจับคู่อุปกรณ์ที่ว่างให้อัตโนมัติด้วย Gemini</p>
             </div>
           </div>
 
-          <p class="text-xs text-slate-600 mb-3">ระบุลักษณะงาน เช่น <em>"ต้องการจัดห้องประชุม Hybrid มีคนมาร่วม 30 คน ต้องต่อจอใหญ่และไมค์ดึงเสียง"</em></p>
+          <p class="text-xs text-slate-600 mb-3">ระบุลักษณะงาน เช่น <em>"งานสัมมนาหอการค้าจังหวัด มีคนมาร่วม 50 คน ต้องต่อจอใหญ่และไมค์คู่"</em></p>
 
-          <textarea id="aiWorkPrompt" rows="3" placeholder="พิมพ์อธิบายงานที่ต้องการนำอุปกรณ์ไปใช้..." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none mb-3"></textarea>
+          <textarea id="aiWorkPrompt" rows="3" placeholder="พิมพ์อธิบายงานที่ต้องการนำอุปกรณ์ไปใช้..." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-tcc-500 focus:outline-none mb-3"></textarea>
 
           <div class="flex items-center justify-between gap-2">
             <div class="flex gap-1 flex-wrap">
-              <button onclick="setAiPromptExample('จัดสัมมนา Hybrid Meeting นอกสถานที่')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">สัมมนา Hybrid</button>
-              <button onclick="setAiPromptExample('ออกบูธจัดนิทรรศการ 2 วัน')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">ออกบูธ</button>
-              <button onclick="setAiPromptExample('งานตัดต่อคลิปวิดีโอ WFH ชั่วคราว')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">งานกราฟิก/ตัดต่อ</button>
+              <button onclick="setAiPromptExample('จัดสัมมนา Hybrid Meeting หอการค้าไทย')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">สัมมนา TCC</button>
+              <button onclick="setAiPromptExample('ออกบูธนิทรรศการส่งเสริมการค้า 2 วัน')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">ออกบูธ</button>
+              <button onclick="setAiPromptExample('งานตัดต่อคลิปประชาสัมพันธ์ WFH ชั่วคราว')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg text-slate-600">งานสื่อ/ตัดต่อ</button>
             </div>
-            <button id="aiRecommendBtn" onclick="runAiEquipmentRecommendation()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition shrink-0">
+            <button id="aiRecommendBtn" onclick="runAiEquipmentRecommendation()" class="px-4 py-2 bg-tcc-600 hover:bg-tcc-700 active:bg-tcc-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition shrink-0">
               <span id="aiRecommendSpinner" class="hidden animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
               <span>วิเคราะห์อุปกรณ์</span>
             </button>
           </div>
 
           <!-- AI Recommendation Output -->
-          <div id="aiRecommendResult" class="mt-4 p-3 bg-purple-50/70 border border-purple-200/60 rounded-xl text-xs space-y-2 hidden">
+          <div id="aiRecommendResult" class="mt-4 p-3 bg-tcc-50/70 border border-tcc-200/60 rounded-xl text-xs space-y-2 hidden">
             <!-- Dynamically populated -->
           </div>
         </div>
 
         <!-- AI Overdue Reminder -->
-        <div class="bg-white rounded-2xl border border-indigo-100 shadow-sm p-6 relative overflow-hidden">
-          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-100/50 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="bg-white rounded-2xl border border-gold-200/80 shadow-sm p-6 relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-gold-100/40 rounded-full blur-2xl pointer-events-none"></div>
 
           <div class="flex items-center gap-2 mb-3">
-            <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">AI</span>
+            <span class="w-8 h-8 rounded-xl bg-gold-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">AI</span>
             <div>
               <h3 class="font-bold text-slate-900 text-sm">Smart Overdue Reminder</h3>
               <p class="text-[11px] text-slate-500">ร่างข้อความทวงถาม/ติดตามอุปกรณ์ส่งคืนตามความสุภาพ</p>
@@ -569,22 +604,22 @@
           <label class="block text-xs font-semibold text-slate-700 mb-1">โทนเสียงของข้อความ:</label>
           <div class="flex gap-2 mb-4 flex-wrap">
             <label class="flex items-center gap-1 text-xs text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
-              <input type="radio" name="aiTone" value="friendly" checked class="text-indigo-600"> เป็นกันเอง / สุภาพ
+              <input type="radio" name="aiTone" value="friendly" checked class="text-tcc-600"> สุภาพ เป็นกันเอง
             </label>
             <label class="flex items-center gap-1 text-xs text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
-              <input type="radio" name="aiTone" value="official" class="text-indigo-600"> ทางการมาตรฐาน
+              <input type="radio" name="aiTone" value="official" class="text-tcc-600"> ทางการมาตรฐาน (หอการค้าฯ)
             </label>
             <label class="flex items-center gap-1 text-xs text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
-              <input type="radio" name="aiTone" value="urgent" class="text-indigo-600"> เร่งด่วน / เกินกำหนด
+              <input type="radio" name="aiTone" value="urgent" class="text-tcc-600"> เร่งด่วน / เกินกำหนด
             </label>
           </div>
 
-          <button id="aiDraftReminderBtn" onclick="runAiDraftReminder()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+          <button id="aiDraftReminderBtn" onclick="runAiDraftReminder()" class="w-full py-2 bg-gold-600 hover:bg-gold-700 active:bg-gold-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
             <span id="aiDraftSpinner" class="hidden animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
             <span>ร่างข้อความติดตามผ่าน LINE / Email</span>
           </button>
 
-          <div id="aiReminderResult" class="mt-4 p-3 bg-indigo-50/70 border border-indigo-200/60 rounded-xl text-xs space-y-2 hidden">
+          <div id="aiReminderResult" class="mt-4 p-3 bg-gold-50/70 border border-gold-200/60 rounded-xl text-xs space-y-2 hidden">
             <!-- Dynamically populated -->
           </div>
         </div>
@@ -598,7 +633,7 @@
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">✏️</div>
+          <div class="w-8 h-8 rounded-lg bg-tcc-100 text-tcc-700 flex items-center justify-center font-bold">✏️</div>
           <div>
             <h3 class="font-bold text-slate-900">แก้ไขบันทึกประวัติหลังบ้าน</h3>
             <p id="editHistoryTransLabel" class="text-[11px] text-slate-500 font-mono">รหัส: -</p>
@@ -662,7 +697,7 @@
 
         <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
           <button type="button" onclick="closeEditHistoryModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold">ยกเลิก</button>
-          <button type="submit" id="btnSaveHistoryEdit" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm">บันทึกการแก้ไข</button>
+          <button type="submit" id="btnSaveHistoryEdit" class="px-4 py-2 rounded-xl bg-tcc-600 hover:bg-tcc-700 text-white font-semibold shadow-sm">บันทึกการแก้ไข</button>
         </div>
       </form>
     </div>
@@ -673,7 +708,7 @@
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <div>
-          <h3 class="font-bold text-slate-900 text-sm">จัดการรายชื่อแผนก / สังกัด</h3>
+          <h3 class="font-bold text-slate-900 text-sm">จัดการรายชื่อฝ่าย / แผนก (หอการค้าไทย)</h3>
           <p class="text-[11px] text-slate-500">ข้อมูลจะถูกบันทึกลงชีต <strong>Departments</strong> ใน Google Sheets</p>
         </div>
         <button onclick="closeDeptManagementModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
@@ -681,10 +716,10 @@
 
       <!-- Add New Dept Input -->
       <div class="mb-4">
-        <label class="block text-xs font-semibold text-slate-700 mb-1">เพิ่มแผนกใหม่เข้าฐานข้อมูล:</label>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">เพิ่มฝ่าย/แผนกใหม่เข้าฐานข้อมูล:</label>
         <div class="flex gap-2">
-          <input type="text" id="newDepartmentNameInput" placeholder="เช่น ฝ่ายบัญชี, กฎหมาย, คลังสินค้า" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs">
-          <button type="button" onclick="handleAddNewDepartment()" class="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shrink-0 shadow-sm">
+          <input type="text" id="newDepartmentNameInput" placeholder="เช่น ฝ่ายสื่อสารองค์กร, ฝ่ายสมาชิกสัมพันธ์" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs">
+          <button type="button" onclick="handleAddNewDepartment()" class="px-3 py-2 bg-tcc-600 hover:bg-tcc-700 text-white rounded-xl text-xs font-semibold shrink-0 shadow-sm">
             + บันทึกแผนก
           </button>
         </div>
@@ -741,7 +776,7 @@
         </div>
         <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
           <button type="button" onclick="closeEditItemModal()" class="px-4 py-2 rounded-xl font-semibold text-slate-600 hover:bg-slate-100">ยกเลิก</button>
-          <button type="submit" id="btnSaveItemEdit" class="px-4 py-2 rounded-xl font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-sm">บันทึกการแก้ไข</button>
+          <button type="submit" id="btnSaveItemEdit" class="px-4 py-2 rounded-xl font-semibold bg-tcc-600 hover:bg-tcc-700 text-white shadow-sm">บันทึกการแก้ไข</button>
         </div>
       </form>
     </div>
@@ -751,7 +786,7 @@
   <div id="addItemModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-        <h3 class="font-bold text-slate-900">เพิ่มอุปกรณ์ใหม่เข้าสู่คลัง</h3>
+        <h3 class="font-bold text-slate-900">เพิ่มอุปกรณ์ใหม่เข้าสู่คลัง (TCC)</h3>
         <button onclick="closeAddItemModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
       </div>
 
@@ -769,7 +804,7 @@
           <select id="newItemCategory" required onchange="handleCategorySelectionChange(this.value)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white">
             <option value="">-- กำลังโหลดหมวดหมู่จากชีต... --</option>
           </select>
-          <input type="text" id="newItemCustomCategory" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่ที่ต้องการเพิ่ม..." class="hidden w-full mt-2 px-3 py-2 rounded-xl border border-purple-300 bg-purple-50/50 text-xs text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500">
+          <input type="text" id="newItemCustomCategory" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่ที่ต้องการเพิ่ม..." class="hidden w-full mt-2 px-3 py-2 rounded-xl border border-tcc-300 bg-tcc-50/50 text-xs text-tcc-900 focus:outline-none focus:ring-2 focus:ring-tcc-500">
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Serial Number</label>
@@ -777,7 +812,7 @@
         </div>
         <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
           <button type="button" onclick="closeAddItemModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">ยกเลิก</button>
-          <button type="submit" id="btnAddItemSubmit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white">บันทึกอุปกรณ์</button>
+          <button type="submit" id="btnAddItemSubmit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-tcc-600 hover:bg-tcc-700 text-white">บันทึกอุปกรณ์</button>
         </div>
       </form>
     </div>
@@ -813,14 +848,14 @@
             <li><code>Items</code> : ทะเบียนอุปกรณ์และสถานะ</li>
             <li><code>Logs</code> : ประวัติการทำรายการยืม-คืน</li>
             <li><code>Categories</code> : รายชื่อหมวดหมู่อุปกรณ์</li>
-            <li><code>Departments</code> : <strong>รายชื่อแผนก/สังกัด (เพิ่ม-แก้ไขได้ทั้งหน้าเว็บและในชีต)</strong></li>
+            <li><code>Departments</code> : <strong>รายชื่อฝ่าย/แผนก (เพิ่ม-แก้ไขได้ทั้งหน้าเว็บและในชีต)</strong></li>
           </ul>
         </div>
 
         <div>
           <div class="flex items-center justify-between mb-1">
             <span class="font-bold text-slate-800">2. คัดลอกโค้ดเวอร์ชันล่าสุดนี้ไปวางใน Apps Script (Code.gs):</span>
-            <button onclick="copyGasCode()" class="text-brand-600 font-semibold hover:underline flex items-center gap-1">
+            <button onclick="copyGasCode()" class="text-tcc-600 font-semibold hover:underline flex items-center gap-1">
               <span>คัดลอกโค้ดทั้งหมด</span>
             </button>
           </div>
@@ -834,55 +869,6 @@
           <p>3. ลบโค้ดเดิม วางโค้ดใหม่นี้ลงไป แล้วกดปุ่ม <strong>บันทึก (Ctrl + S)</strong></p>
           <p>4. คลิกปุ่ม <strong>Deploy (การทำให้ใช้งานได้)</strong> > <strong>Manage deployments</strong> > กดรูปดินสอ (Edit) > เลือก Version เป็น <strong>New version</strong> > กด <strong>Deploy</strong></p>
           <p class="text-emerald-700 font-semibold">5. เมื่อเปิดหน้าเว็บหรือกดรีเฟรช 1 ครั้ง Google Sheet จะสร้างแท็บ <code>Departments</code> ขึ้นมาทันทีครับ</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: Gemini Vision Inspection on Return -->
-  <div id="aiInspectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">AI</div>
-          <div>
-            <h3 class="font-bold text-slate-900">ตรวจสภาพอุปกรณ์ด้วยภาพถ่าย</h3>
-            <p id="inspectDeviceName" class="text-[11px] text-slate-500 font-medium">อุปกรณ์: -</p>
-          </div>
-        </div>
-        <button onclick="closeAiInspectModal()" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
-      </div>
-
-      <div class="space-y-3">
-        <p id="inspectBorrowerName" class="text-xs text-slate-600 font-medium">ผู้ยืม: -</p>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">ถ่ายภาพหรืออัปโหลดรูปสภาพเครื่องจริง:</label>
-          <input type="file" id="inspectPhotoInput" accept="image/*" onchange="handleInspectPhotoSelected(event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
-        </div>
-
-        <div id="inspectPhotoPreviewContainer" class="hidden">
-          <img id="inspectPhotoPreview" class="w-full h-44 object-cover rounded-xl border border-slate-200" alt="Preview">
-        </div>
-
-        <button id="btnRunAiInspect" onclick="runAiImageInspection()" disabled class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
-          <span id="inspectSpinner" class="hidden animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
-          <span id="inspectBtnText">สแกนและวิเคราะห์สภาพด้วย Gemini</span>
-        </button>
-
-        <div id="inspectResultContainer" class="p-3 bg-purple-50/80 border border-purple-200 rounded-xl text-xs space-y-1.5 hidden">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-purple-900">ผลการวิเคราะห์สภาพ:</span>
-            <span id="inspectGradeBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-200 text-purple-800">เกรด A</span>
-          </div>
-          <p id="inspectAnalysisText" class="text-slate-700 text-xs leading-relaxed"></p>
-        </div>
-
-        <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
-          <button type="button" onclick="closeAiInspectModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">ปิด</button>
-          <button type="button" onclick="confirmReturnWithAiNotes()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
-            ยืนยันรับคืนพร้อมบันทึก
-          </button>
         </div>
       </div>
     </div>
@@ -910,10 +896,9 @@
 
   <script>
     /* =========================================================
-     * APPLICATION STATE & CONFIGURATION
+     * APPLICATION STATE & CONFIGURATION (THAI CHAMBER OF COMMERCE)
      * ========================================================= */
     const STORAGE_KEY_URL = "it_asset_webapp_url";
-    // แก้ไขตัวอักษร 'x' ที่ตกหล่นใน URL (AKfycbxEj...)
     const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxEj-79eHal39qVlnENM2GxRTn5C1TVXYjE8IxehEKXokpOHh5VtfHCbuc7_PSr4xO0/exec";
     const OLD_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxypntnPBTPthGdfnCVj5bL6zAIQSAsNqzQ7LMsRlo5wMiTRUmug3mSJXUWNiRHQ4pE/exec";
 
@@ -960,17 +945,20 @@
       "Adapter",
       "Audio",
       "Tablet",
+      "Accessory",
       "Other"
     ];
 
+    // รายชื่อฝ่าย/สำนัก หอการค้าไทยและสภาหอการค้าแห่งประเทศไทย
     const INITIAL_DEMO_DEPTS = [
-      "IT Support & Infra",
-      "Marketing & Branding",
-      "HR & Training",
-      "Accounting & Finance",
-      "Sales & Business Dev",
-      "Operations & Supply Chain",
-      "Executive & Management"
+      "ฝ่ายเทคโนโลยีสารสนเทศ (IT)",
+      "สำนักเลขาธิการและประสานงาน",
+      "ฝ่ายสมาชิกสัมพันธ์และการบริการ",
+      "ฝ่ายส่งเสริมการค้าและเศรษฐกิจระหว่างประเทศ",
+      "ฝ่ายพัฒนาธุรกิจและนวัตกรรม",
+      "ฝ่ายประชาสัมพันธ์และสื่อสารองค์กร",
+      "ฝ่ายการเงินและการบัญชี",
+      "ฝ่ายทรัพยากรบุคคล (HR)"
     ];
 
     const INITIAL_DEMO_ITEMS = [
@@ -984,18 +972,18 @@
 
     function getInitialDemoBorrows() {
       return [
-        { trans_id: "TRX-1001", item_id: "IT-002", borrower_name: "กิตติศักดิ์ พัฒนพงศ์", borrower_dept: "Marketing & Branding", borrow_date: getOffsetDate(-6), expected_return: getOffsetDate(-2) },
-        { trans_id: "TRX-1002", item_id: "IT-005", borrower_name: "สุวิมล แสงทอง", borrower_dept: "HR & Training", borrow_date: getOffsetDate(-1), expected_return: getOffsetDate(4) }
+        { trans_id: "TRX-1001", item_id: "IT-002", borrower_name: "กิตติศักดิ์ พัฒนพงศ์", borrower_dept: "ฝ่ายประชาสัมพันธ์และสื่อสารองค์กร", borrow_date: getOffsetDate(-6), expected_return: getOffsetDate(-2) },
+        { trans_id: "TRX-1002", item_id: "IT-005", borrower_name: "สุวิมล แสงทอง", borrower_dept: "ฝ่ายสมาชิกสัมพันธ์และการบริการ", borrow_date: getOffsetDate(-1), expected_return: getOffsetDate(4) }
       ];
     }
 
     function getInitialDemoLogs() {
       const borrows = getInitialDemoBorrows();
       return [
-        { trans_id: borrows[0].trans_id, timestamp: borrows[0].borrow_date + " 09:30", item_id: borrows[0].item_id, borrower_name: borrows[0].borrower_name, borrower_dept: borrows[0].borrower_dept, borrower_contact: "081-111-2222", borrow_date: borrows[0].borrow_date, expected_return: borrows[0].expected_return, actual_return: "", trans_status: "Borrowed", notes: "งานนำเสนอแผนงานประจำปี" },
-        { trans_id: borrows[1].trans_id, timestamp: borrows[1].borrow_date + " 14:15", item_id: borrows[1].item_id, borrower_name: borrows[1].borrower_name, borrower_dept: borrows[1].borrower_dept, borrower_contact: "089-333-4444", borrow_date: borrows[1].borrow_date, expected_return: borrows[1].expected_return, actual_return: "", trans_status: "Borrowed", notes: "บันทึกเสียงอบรมพนักงานใหม่" },
-        { trans_id: "TRX-0985", timestamp: getOffsetDate(-14) + " 10:00", item_id: "IT-001", borrower_name: "วิชัย สมบูรณ์", borrower_dept: "IT Support & Infra", borrower_contact: "082-555-6666", borrow_date: getOffsetDate(-14), expected_return: getOffsetDate(-10), actual_return: getOffsetDate(-10) + " 16:30", trans_status: "Returned", notes: "คืน: สภาพสมบูรณ์พร้อมสายชาร์จแท้" },
-        { trans_id: "TRX-0972", timestamp: getOffsetDate(-20) + " 13:20", item_id: "IT-003", borrower_name: "ดนัย ภักดี", borrower_dept: "Sales & Business Dev", borrower_contact: "086-777-8888", borrow_date: getOffsetDate(-20), expected_return: getOffsetDate(-18), actual_return: getOffsetDate(-18) + " 17:00", trans_status: "Returned", notes: "คืน: อุปกรณ์ทำงานปกติ ไม่มีรอย" }
+        { trans_id: borrows[0].trans_id, timestamp: borrows[0].borrow_date + " 09:30", item_id: borrows[0].item_id, borrower_name: borrows[0].borrower_name, borrower_dept: borrows[0].borrower_dept, borrower_contact: "081-111-2222", borrow_date: borrows[0].borrow_date, expected_return: borrows[0].expected_return, actual_return: "", trans_status: "Borrowed", notes: "งานนำเสนอแผนงานประจำปีหอการค้าไทย" },
+        { trans_id: borrows[1].trans_id, timestamp: borrows[1].borrow_date + " 14:15", item_id: borrows[1].item_id, borrower_name: borrows[1].borrower_name, borrower_dept: borrows[1].borrower_dept, borrower_contact: "089-333-4444", borrow_date: borrows[1].borrow_date, expected_return: borrows[1].expected_return, actual_return: "", trans_status: "Borrowed", notes: "บันทึกเสียงสัมมนาผู้ประกอบการ" },
+        { trans_id: "TRX-0985", timestamp: getOffsetDate(-14) + " 10:00", item_id: "IT-001", borrower_name: "วิชัย สมบูรณ์", borrower_dept: "ฝ่ายเทคโนโลยีสารสนเทศ (IT)", borrower_contact: "082-555-6666", borrow_date: getOffsetDate(-14), expected_return: getOffsetDate(-10), actual_return: getOffsetDate(-10) + " 16:30", trans_status: "Returned", notes: "คืน: สภาพสมบูรณ์พร้อมสายชาร์จแท้" },
+        { trans_id: "TRX-0972", timestamp: getOffsetDate(-20) + " 13:20", item_id: "IT-003", borrower_name: "ดนัย ภักดี", borrower_dept: "ฝ่ายส่งเสริมการค้าและเศรษฐกิจระหว่างประเทศ", borrower_contact: "086-777-8888", borrow_date: getOffsetDate(-20), expected_return: getOffsetDate(-18), actual_return: getOffsetDate(-18) + " 17:00", trans_status: "Returned", notes: "คืน: อุปกรณ์ทำงานปกติ ไม่มีรอย" }
       ];
     }
 
@@ -1040,7 +1028,6 @@
       });
     }
 
-    /* Central API Router */
     async function callAPI(action, payload = {}, isBackground = false) {
       if (state.webAppUrl && state.webAppUrl.trim() !== "") {
         try {
@@ -1076,7 +1063,7 @@
           if (!isBackground) {
             if (err.message === "AUTH_401" || String(err).includes("Failed to fetch")) {
               showNotification(
-                "⚠️ เชื่อมต่อ Google Sheets ไม่สำเร็จ (ตรวจสอบ URL หรือสิทธิ์ Who has access: Anyone) ระบบสลับใช้โหมดจำลองชั่วคราว",
+                "⚠️ เชื่อมต่อ Google Sheets ไม่สำเร็จ (ตรวจสอบสิทธิ์ Who has access: Anyone) ระบบสลับใช้โหมดจำลองชั่วคราว",
                 "warning"
               );
             } else {
@@ -1346,7 +1333,7 @@
     function switchTab(tabId) {
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
       document.querySelectorAll(".tab-button").forEach(el => {
-        el.classList.remove("bg-brand-600", "text-white", "shadow-sm");
+        el.classList.remove("bg-tcc-600", "text-white", "shadow-sm", "border", "border-tcc-700");
         el.classList.add("text-slate-600", "hover:bg-slate-100");
       });
 
@@ -1354,7 +1341,7 @@
       const targetBtn = document.getElementById("tabBtn-" + tabId);
       if (targetTab) targetTab.classList.remove("hidden");
       if (targetBtn) {
-        targetBtn.classList.add("bg-brand-600", "text-white", "shadow-sm");
+        targetBtn.classList.add("bg-tcc-600", "text-white", "shadow-sm", "border", "border-tcc-700");
         targetBtn.classList.remove("text-slate-600", "hover:bg-slate-100");
       }
     }
@@ -1368,7 +1355,7 @@
         success: "bg-emerald-50 border-emerald-200 text-emerald-800",
         error: "bg-rose-50 border-rose-200 text-rose-800",
         warning: "bg-amber-50 border-amber-200 text-amber-800",
-        info: "bg-blue-50 border-blue-200 text-blue-800"
+        info: "bg-tcc-50 border-tcc-200 text-tcc-800"
       };
 
       toast.className = `p-3.5 rounded-xl border shadow-lg text-xs font-medium pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0 flex items-center justify-between ${bgMap[type] || bgMap.info}`;
@@ -1523,16 +1510,16 @@
 
       container.innerHTML = filtered.map(item => `
         <div onclick="addSelectedItem('${escapeQuotes(item.item_id)}'); document.getElementById('searchableItemDropdownMenu').classList.add('hidden');" 
-             class="p-2.5 hover:bg-brand-50 rounded-xl cursor-pointer transition flex items-center justify-between group border border-transparent hover:border-brand-200">
+             class="p-2.5 hover:bg-tcc-50 rounded-xl cursor-pointer transition flex items-center justify-between group border border-transparent hover:border-tcc-200">
           <div>
-            <div class="font-semibold text-slate-800 text-xs group-hover:text-brand-700">${item.item_name}</div>
+            <div class="font-semibold text-slate-800 text-xs group-hover:text-tcc-700">${item.item_name}</div>
             <div class="text-[11px] text-slate-400 font-mono flex items-center gap-2 mt-0.5">
               <span class="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-bold">${item.item_id}</span>
               <span>หมวด: ${item.category}</span>
               ${item.serial_number ? `<span>S/N: ${item.serial_number}</span>` : ''}
             </div>
           </div>
-          <button type="button" class="text-xs bg-brand-50 group-hover:bg-brand-600 group-hover:text-white text-brand-700 px-2.5 py-1 rounded-lg font-semibold transition">
+          <button type="button" class="text-xs bg-tcc-50 group-hover:bg-tcc-600 group-hover:text-white text-tcc-700 px-2.5 py-1 rounded-lg font-semibold transition">
             + เลือกยืม
           </button>
         </div>
@@ -1588,7 +1575,7 @@
         container.innerHTML = `
           <div class="p-3 text-center text-xs text-slate-400">
             ไม่พบแผนก "${q}"
-            <button type="button" onclick="quickAddDeptFromInput('${escapeQuotes(q)}')" class="mt-1 text-brand-600 font-semibold underline block mx-auto text-xs">
+            <button type="button" onclick="quickAddDeptFromInput('${escapeQuotes(q)}')" class="mt-1 text-tcc-600 font-semibold underline block mx-auto text-xs">
               + บันทึก "${q}" เป็นแผนกใหม่ลง Google Sheets
             </button>
           </div>
@@ -1597,7 +1584,7 @@
       }
 
       container.innerHTML = filtered.map(dept => `
-        <div onclick="selectDepartment('${escapeQuotes(dept)}')" class="px-3 py-2 hover:bg-brand-50 hover:text-brand-700 rounded-xl cursor-pointer text-xs font-medium text-slate-700 flex items-center justify-between transition">
+        <div onclick="selectDepartment('${escapeQuotes(dept)}')" class="px-3 py-2 hover:bg-tcc-50 hover:text-tcc-700 rounded-xl cursor-pointer text-xs font-medium text-slate-700 flex items-center justify-between transition">
           <span>${dept}</span>
           <span class="text-[10px] text-slate-400">เลือก</span>
         </div>
@@ -1649,10 +1636,10 @@
       container.innerHTML = state.departments.map((dept, idx) => {
         if (editingDeptIndex === idx) {
           return `
-            <div class="flex items-center gap-1.5 p-2 bg-brand-50 rounded-lg border border-brand-300 text-xs">
+            <div class="flex items-center gap-1.5 p-2 bg-tcc-50 rounded-lg border border-tcc-300 text-xs">
               <input type="text" id="inlineEditDeptInput-${idx}" value="${escapeQuotes(dept)}" 
-                     class="flex-1 px-2 py-1 rounded border border-brand-300 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-brand-500">
-              <button type="button" onclick="saveInlineEditDept(${idx}, '${escapeQuotes(dept)}')" class="px-2.5 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded font-semibold text-[11px] shrink-0">
+                     class="flex-1 px-2 py-1 rounded border border-tcc-300 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-tcc-500">
+              <button type="button" onclick="saveInlineEditDept(${idx}, '${escapeQuotes(dept)}')" class="px-2.5 py-1 bg-tcc-600 hover:bg-tcc-700 text-white rounded font-semibold text-[11px] shrink-0">
                 บันทึก
               </button>
               <button type="button" onclick="cancelInlineEditDept()" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 rounded border border-slate-200 text-[11px] shrink-0">
@@ -1665,7 +1652,7 @@
           <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs hover:border-slate-300 transition">
             <span class="font-medium text-slate-800">${dept}</span>
             <div class="flex items-center gap-1">
-              <button type="button" onclick="startInlineEditDept(${idx})" class="px-2 py-1 text-brand-600 hover:bg-brand-50 rounded font-medium text-[11px]" title="แก้ไขชื่อแผนก">
+              <button type="button" onclick="startInlineEditDept(${idx})" class="px-2 py-1 text-tcc-600 hover:bg-tcc-50 rounded font-medium text-[11px]" title="แก้ไขชื่อแผนก">
                 ✏️ แก้ไข
               </button>
               <button type="button" onclick="handleDeleteDepartment('${escapeQuotes(dept)}')" class="px-1.5 py-1 text-rose-500 hover:bg-rose-50 rounded text-[11px]" title="ลบแผนก">
@@ -1934,7 +1921,7 @@
       if (countBadge) {
         countBadge.innerText = `เลือกแล้ว ${count} ชิ้น`;
         if (count > 0) {
-          countBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 animate-pulse";
+          countBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-tcc-100 text-tcc-800 animate-pulse";
         } else {
           countBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600";
         }
@@ -1957,8 +1944,8 @@
         const item = state.items.find(i => String(i.item_id).toLowerCase() === String(id).toLowerCase());
         const name = item ? item.item_name : id;
         return `
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-brand-50 border border-brand-200 text-brand-800 shadow-sm animate-fadeIn">
-            <span class="font-mono font-bold text-[11px] text-brand-600">[${id}]</span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-white border border-tcc-300 text-tcc-900 shadow-sm animate-fadeIn">
+            <span class="font-mono font-bold text-[11px] text-tcc-700">[${id}]</span>
             <span class="max-w-[180px] truncate">${name}</span>
             <button type="button" onclick="removeSelectedItem('${escapeQuotes(id)}')" class="text-slate-400 hover:text-rose-600 font-bold ml-1 rounded p-0.5 transition" title="นำชิ้นนี้ออก">✕</button>
           </span>
@@ -1990,7 +1977,7 @@
         if (isBorrowed) {
           const active = state.activeBorrows.find(b => String(b.item_id).toLowerCase() === String(item.item_id).toLowerCase());
           statusBadge = `
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gold-100 text-gold-900 border border-gold-200">
               กำลังถูกยืม
             </span>
             ${active ? `<div class="text-[10px] text-slate-400 mt-0.5 font-medium">(${escapeQuotes(active.borrower_name)})</div>` : ''}
@@ -2003,13 +1990,13 @@
 
         return `
           <tr class="hover:bg-slate-50 transition">
-            <td class="py-3 px-4 font-mono font-medium text-xs text-brand-700">${item.item_id}</td>
+            <td class="py-3 px-4 font-mono font-medium text-xs text-tcc-700">${item.item_id}</td>
             <td class="py-3 px-4 font-medium text-slate-900">${item.item_name}</td>
             <td class="py-3 px-4 text-xs text-slate-600"><span class="bg-slate-100 px-2 py-0.5 rounded-md">${item.category}</span></td>
             <td class="py-3 px-4 font-mono text-xs text-slate-500">${item.serial_number || '-'}</td>
             <td class="py-3 px-4 text-center">${statusBadge}</td>
             <td class="py-3 px-4 text-center">
-              <button type="button" onclick="openEditItemModal('${escapeQuotes(item.item_id)}')" class="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-brand-700 bg-slate-100 hover:bg-brand-50 rounded-lg border border-slate-200 transition">
+              <button type="button" onclick="openEditItemModal('${escapeQuotes(item.item_id)}')" class="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-tcc-700 bg-slate-100 hover:bg-tcc-50 rounded-lg border border-slate-200 transition">
                 ✏️ แก้ไข
               </button>
             </td>
@@ -2107,12 +2094,12 @@
             <td class="py-3 px-4 text-center">
               ${isReturned
                 ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">คืนแล้ว</span>'
-                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">กำลังยืม</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gold-100 text-gold-900 border border-gold-200">กำลังยืม</span>'
               }
             </td>
             <td class="py-3 px-4 text-xs text-slate-600 max-w-xs truncate" title="${escapeQuotes(log.notes || '-')}">${log.notes || '-'}</td>
             <td class="py-3 px-4 text-center">
-              <button type="button" onclick="openEditHistoryModal('${escapeQuotes(log.trans_id)}')" class="px-2.5 py-1 text-xs font-semibold text-brand-700 hover:text-brand-900 bg-brand-50 hover:bg-brand-100 rounded-lg border border-brand-200 transition flex items-center gap-1 mx-auto" title="แก้ไขบันทึกย้อนหลัง">
+              <button type="button" onclick="openEditHistoryModal('${escapeQuotes(log.trans_id)}')" class="px-2.5 py-1 text-xs font-semibold text-tcc-700 hover:text-tcc-900 bg-tcc-50 hover:bg-tcc-100 rounded-lg border border-tcc-200 transition flex items-center gap-1 mx-auto" title="แก้ไขบันทึกย้อนหลัง">
                 <span>✏️ แก้ไข</span>
               </button>
             </td>
@@ -2180,7 +2167,7 @@
       const link = document.createElement("a");
       const todayStr = getOffsetDate(0);
       link.setAttribute("href", url);
-      link.setAttribute("download", `it_asset_history_${todayStr}.csv`);
+      link.setAttribute("download", `tcc_asset_history_${todayStr}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2226,7 +2213,7 @@
         return `
           <tr class="hover:bg-slate-50/80 transition ${isSelected ? 'bg-emerald-50/50' : ''}">
             <td class="py-3 px-3 text-center">
-              <input type="checkbox" onchange="toggleReturnSelection('${escapeQuotes(b.trans_id)}')" ${isSelected ? 'checked' : ''} class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer">
+              <input type="checkbox" onchange="toggleReturnSelection('${escapeQuotes(b.trans_id)}')" ${isSelected ? 'checked' : ''} class="w-4 h-4 rounded text-tcc-600 focus:ring-tcc-500 cursor-pointer">
             </td>
             <td class="py-3 px-4 font-mono font-medium text-xs text-slate-700">${b.trans_id}</td>
             <td class="py-3 px-4">
@@ -2242,15 +2229,12 @@
             <td class="py-3 px-4 text-center">
               ${isOverdue 
                 ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-700">เกินกำหนดส่ง</span>'
-                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">กำลังยืม</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gold-100 text-gold-900 border border-gold-200">กำลังยืม</span>'
               }
             </td>
             <td class="py-3 px-4 text-right">
               <div class="flex items-center justify-end gap-1.5">
-                <button type="button" onclick="openAiInspectModal('${escapeQuotes(b.trans_id)}')" class="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs transition" title="ถ่ายภาพให้ AI ตรวจสภาพ">
-                  📷 ตรวจสภาพ
-                </button>
-                <button type="button" onclick="requestReturnItem('${escapeQuotes(b.trans_id)}', '${escapeQuotes(itemInfo.item_name)}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition">
+                <button type="button" onclick="requestReturnItem('${escapeQuotes(b.trans_id)}', '${escapeQuotes(itemInfo.item_name)}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition">
                   รับคืน
                 </button>
               </div>
@@ -2433,14 +2417,14 @@
       container.innerHTML = filtered.map(i => {
         const isSelected = state.selectedBorrowItems.includes(i.item_id);
         return `
-          <div onclick="selectQuickItem('${escapeQuotes(i.item_id)}')" class="p-2.5 rounded-xl border ${isSelected ? 'border-brand-500 bg-brand-50/70' : 'border-slate-100 hover:border-brand-300 hover:bg-brand-50/40'} cursor-pointer transition flex items-center justify-between group">
+          <div onclick="selectQuickItem('${escapeQuotes(i.item_id)}')" class="p-2.5 rounded-xl border ${isSelected ? 'border-tcc-500 bg-tcc-50/70 shadow-sm' : 'border-slate-100 hover:border-tcc-300 hover:bg-tcc-50/40'} cursor-pointer transition flex items-center justify-between group">
             <div>
-              <p class="font-medium text-xs ${isSelected ? 'text-brand-900 font-semibold' : 'text-slate-900 group-hover:text-brand-700'}">${i.item_name}</p>
+              <p class="font-medium text-xs ${isSelected ? 'text-tcc-950 font-semibold' : 'text-slate-900 group-hover:text-tcc-700'}">${i.item_name}</p>
               <p class="text-[10px] text-slate-400 font-mono">${i.item_id} · ${i.category}</p>
             </div>
             ${isSelected 
-              ? '<span class="text-[10px] text-brand-700 font-bold bg-brand-100 px-2 py-0.5 rounded-md flex items-center gap-1">✓ เลือกแล้ว</span>'
-              : '<span class="text-[10px] text-brand-600 font-semibold opacity-0 group-hover:opacity-100 transition">+ เลือก</span>'
+              ? '<span class="text-[10px] text-tcc-700 font-bold bg-tcc-100 px-2 py-0.5 rounded-md flex items-center gap-1">✓ เลือกแล้ว</span>'
+              : '<span class="text-[10px] text-tcc-600 font-semibold opacity-0 group-hover:opacity-100 transition">+ เลือก</span>'
             }
           </div>
         `;
@@ -2705,7 +2689,7 @@
       spinner.classList.remove("hidden");
       resultBox.classList.add("hidden");
 
-      const systemInstruction = `คุณคือผู้เชี่ยวชาญด้าน IT Infrastructure และ Asset Management ขององค์กร
+      const systemInstruction = `คุณคือผู้เชี่ยวชาญด้าน IT Infrastructure และ Asset Management
 จงวิเคราะห์ความต้องการใช้งานอุปกรณ์ของผู้ใช้ โดยเปรียบเทียบกับรายการอุปกรณ์ที่มีสถานะ 'Available' (พร้อมใช้งาน) เท่านั้น
 แล้วเลือกอุปกรณ์ที่เหมาะสมที่สุด 1 ชิ้น พร้อมให้คำแนะนำและเหตุผลสั้นกระชับเข้าใจง่าย
 ส่งออกคำตอบในรูปแบบ JSON Schema ที่กำหนดอย่างเคร่งครัด`;
@@ -2754,7 +2738,7 @@ ${inventoryContext}`;
           if (lower.includes("ตัดต่อ") || lower.includes("กราฟิก") || lower.includes("งานออกแบบ")) {
             best = availableItems.find(i => i.category === "Laptop" || i.item_name.includes("M2") || i.item_name.includes("i7")) || best;
             reason = "มีหน่วยประมวลผลสูงและแรมเพียงพอสำหรับงานตัดต่อและประมวลผลกราฟิก";
-          } else if (lower.includes("ประชุม") || lower.includes("สัมมนา") || lower.includes("hybrid") || lower.includes("เสียง")) {
+          } else if (lower.includes("ประชุม") || lower.includes("สัมมนา") || lower.includes("hybrid") || lower.includes("เสียง") || lower.includes("หอการค้า")) {
             best = availableItems.find(i => i.category === "Audio" || i.category === "Projector" || i.category === "Adapter") || best;
             reason = "รองรับการกระจายสัญญาณภาพและเสียงในห้องประชุมได้อย่างราบรื่น";
           } else if (lower.includes("จอ") || lower.includes("ต่อ")) {
@@ -2774,15 +2758,15 @@ ${inventoryContext}`;
         resultBox.innerHTML = `
           <div class="flex items-start justify-between">
             <div>
-              <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-200 text-purple-800 mb-1">อุปกรณ์ที่แนะนำ</span>
+              <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-tcc-200 text-tcc-900 mb-1">อุปกรณ์ที่แนะนำ</span>
               <h4 class="font-bold text-slate-900 text-sm">[${parsed.recommendedItemId}] ${parsed.recommendedItemName}</h4>
             </div>
-            <button onclick="applyAiRecommendation('${escapeQuotes(parsed.recommendedItemId)}', ${parsed.suggestedReturnDays}, '${escapeQuotes(promptText)}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+            <button onclick="applyAiRecommendation('${escapeQuotes(parsed.recommendedItemId)}', ${parsed.suggestedReturnDays}, '${escapeQuotes(promptText)}')" class="px-3 py-1.5 bg-tcc-600 hover:bg-tcc-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
               ใช้รายการนี้ทันที
             </button>
           </div>
           <p class="text-slate-600 text-xs mt-1"><strong>เหตุผล:</strong> ${parsed.reason}</p>
-          ${parsed.additionalTips ? `<p class="text-purple-700 text-xs">💡 <strong>ข้อแนะนำเสริม:</strong> ${parsed.additionalTips}</p>` : ''}
+          ${parsed.additionalTips ? `<p class="text-tcc-700 text-xs">💡 <strong>ข้อแนะนำเสริม:</strong> ${parsed.additionalTips}</p>` : ''}
           <p class="text-[11px] text-slate-400">ระยะเวลาการยืมที่เหมาะสม: ประมาณ ${parsed.suggestedReturnDays} วัน</p>
         `;
         resultBox.classList.remove("hidden");
@@ -2836,7 +2820,7 @@ ${inventoryContext}`;
       spinner.classList.remove("hidden");
       resultBox.classList.add("hidden");
 
-      const prompt = `ช่วยร่างข้อความแจ้งเตือน/ติดตามการส่งคืนอุปกรณ์ไอทีของบริษัท
+      const prompt = `ช่วยร่างข้อความแจ้งเตือน/ติดตามการส่งคืนอุปกรณ์ไอทีของฝ่ายเทคโนโลยีสารสนเทศ
 ข้อมูลการยืม:
 - ชื่อผู้ยืม: ${borrowRecord.borrower_name}
 - แผนก: ${borrowRecord.borrower_dept || "ไม่ระบุ"}
@@ -2856,22 +2840,22 @@ ${inventoryContext}`;
           draftText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
         } catch (apiErr) {
           if (tone === "urgent") {
-            draftText = `🔔 [แจ้งเตือนด่วน: อุปกรณ์ไอทีเกินกำหนดส่งคืน]\nเรียน คุณ${borrowRecord.borrower_name} (${borrowRecord.borrower_dept})\n\nตามที่ท่านได้ยืมอุปกรณ์ [${borrowRecord.item_id}] ${itemInfo.item_name} ซึ่งครบกำหนดส่งคืนเมื่อวันที่ ${borrowRecord.expected_return} นั้น\n\nขณะนี้รายการดังกล่าวเกินกำหนดส่งคืนแล้ว กรุณานำอุปกรณ์มาส่งมอบคืน ณ แผนก IT Support โดยเร็ว หากติดขัดประการใดโปรดติดต่อเจ้าหน้าที่ทันทีครับ ขอบคุณครับ`;
+            draftText = `🔔 [แจ้งเตือนด่วน: อุปกรณ์ไอทีเกินกำหนดส่งคืน]\nเรียน คุณ${borrowRecord.borrower_name} (${borrowRecord.borrower_dept})\n\nตามที่ท่านได้ยืมอุปกรณ์ [${borrowRecord.item_id}] ${itemInfo.item_name} ซึ่งครบกำหนดส่งคืนเมื่อวันที่ ${borrowRecord.expected_return} นั้น\n\nขณะนี้รายการดังกล่าวเกินกำหนดส่งคืนแล้ว กรุณานำอุปกรณ์มาส่งมอบคืน ณ ฝ่ายเทคโนโลยีสารสนเทศ โดยเร็ว หากติดขัดประการใดโปรดติดต่อเจ้าหน้าที่ทันทีครับ ขอบคุณครับ`;
           } else if (tone === "official") {
-            draftText = `เรียน คุณ${borrowRecord.borrower_name},\n\nเรื่อง: ติดตามการส่งคืนอุปกรณ์คอมพิวเตอร์ [${borrowRecord.item_id}] ${itemInfo.item_name}\n\nอ้างถึงรายการยืมเลขที่ ${borrowRecord.trans_id} มีกำหนดส่งคืนในวันที่ ${borrowRecord.expected_return} แผนก IT ขอความอนุเคราะห์ตรวจสอบและนำส่งคืนตามกำหนดเวลาดังกล่าว เพื่อจัดเตรียมความพร้อมให้อุปกรณ์หมุนเวียนต่อไป\n\nขอแสดงความนับถือ,\nฝ่ายสนับสนุนเทคโนโลยีสารสนเทศ (IT Support)`;
+            draftText = `เรียน คุณ${borrowRecord.borrower_name},\n\nเรื่อง: ติดตามการส่งคืนอุปกรณ์คอมพิวเตอร์ [${borrowRecord.item_id}] ${itemInfo.item_name}\n\nอ้างถึงรายการยืมเลขที่ ${borrowRecord.trans_id} มีกำหนดส่งคืนในวันที่ ${borrowRecord.expected_return} ฝ่ายเทคโนโลยีสารสนเทศ ขอความอนุเคราะห์ตรวจสอบและนำส่งคืนตามกำหนดเวลาดังกล่าว เพื่อจัดเตรียมความพร้อมให้อุปกรณ์หมุนเวียนต่อไป\n\nขอแสดงความนับถือ,\nฝ่ายเทคโนโลยีสารสนเทศ (IT Support)`;
           } else {
             draftText = `สวัสดีครับคุณ${borrowRecord.borrower_name} 😊\nขออนุญาตทักเตือนเรื่องอุปกรณ์ [${borrowRecord.item_id}] ${itemInfo.item_name} มีกำหนดส่งคืนวันที่ ${borrowRecord.expected_return} นี้นะครับ หากใช้งานเสร็จแล้ว สามารถแวะนำมาคืนที่ห้อง IT ได้เลยนะครับ ขอบคุณมากครับ! 🙏`;
           }
         }
 
         resultBox.innerHTML = `
-          <div class="flex items-center justify-between pb-2 border-b border-indigo-200">
+          <div class="flex items-center justify-between pb-2 border-b border-gold-200">
             <span class="font-bold text-slate-800">ร่างข้อความจาก Gemini (${tone}):</span>
             <button onclick="copyGeneratedDraft()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 border border-slate-200 transition">
               <span>คัดลอกข้อความ</span>
             </button>
           </div>
-          <pre id="draftContent" class="whitespace-pre-wrap font-sans text-xs text-slate-700 leading-relaxed bg-white p-3 rounded-xl border border-indigo-100">${draftText}</pre>
+          <pre id="draftContent" class="whitespace-pre-wrap font-sans text-xs text-slate-700 leading-relaxed bg-white p-3 rounded-xl border border-gold-100">${draftText}</pre>
         `;
         resultBox.classList.remove("hidden");
         showNotification("ร่างข้อความติดตามเรียบร้อยแล้ว", "success");
@@ -2901,159 +2885,11 @@ ${inventoryContext}`;
       document.body.removeChild(textarea);
     }
 
-    let currentInspectTransId = null;
-    let currentInspectBase64 = null;
-    let latestInspectNotes = "";
-
-    function openAiInspectModal(transId) {
-      currentInspectTransId = transId;
-      currentInspectBase64 = null;
-      latestInspectNotes = "";
-
-      const record = state.activeBorrows.find(b => String(b.trans_id).toLowerCase() === String(transId).toLowerCase());
-      if (!record) return;
-      const item = state.items.find(i => String(i.item_id).toLowerCase() === String(record.item_id).toLowerCase()) || { item_name: record.item_id };
-
-      document.getElementById("inspectDeviceName").innerText = `กำลังตรวจสอบ: [${record.item_id}] ${item.item_name}`;
-      document.getElementById("inspectBorrowerName").innerText = `ผู้ยืม: ${record.borrower_name} (${record.borrower_dept || '-'})`;
-      document.getElementById("inspectPhotoInput").value = "";
-      document.getElementById("inspectPhotoPreviewContainer").classList.add("hidden");
-      document.getElementById("inspectResultContainer").classList.add("hidden");
-      document.getElementById("btnRunAiInspect").disabled = true;
-
-      document.getElementById("aiInspectModal").classList.remove("hidden");
-    }
-
-    function closeAiInspectModal() {
-      document.getElementById("aiInspectModal").classList.add("hidden");
-      currentInspectTransId = null;
-      currentInspectBase64 = null;
-    }
-
-    function handleInspectPhotoSelected(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const dataUrl = e.target.result;
-        currentInspectBase64 = dataUrl.split(",")[1];
-
-        const previewImg = document.getElementById("inspectPhotoPreview");
-        previewImg.src = dataUrl;
-        document.getElementById("inspectPhotoPreviewContainer").classList.remove("hidden");
-        document.getElementById("btnRunAiInspect").disabled = false;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    async function runAiImageInspection() {
-      if (!currentInspectBase64) {
-        showNotification("กรุณาเลือกรูปถ่ายอุปกรณ์ก่อน", "warning");
-        return;
-      }
-
-      const btn = document.getElementById("btnRunAiInspect");
-      const spinner = document.getElementById("inspectSpinner");
-      const btnText = document.getElementById("inspectBtnText");
-      const resultContainer = document.getElementById("inspectResultContainer");
-
-      btn.disabled = true;
-      spinner.classList.remove("hidden");
-      btnText.innerText = "กำลังตรวจสภาพด้วย Gemini Vision...";
-
-      const prompt = `คุณคือผู้เชี่ยวชาญด้าน IT Hardware Quality Assurance
-จงตรวจสอบรูปถ่ายอุปกรณ์ที่ส่งคืนชิ้นนี้อย่างละเอียด:
-1. ดูสภาพภายนอก รอยขีดข่วน แตกหัก จอภาพ สายไฟ พอร์ต หรือความสะอาด
-2. ประเมินระดับสภาพ (สมบูรณ์ 100% / มีรอยขีดข่วนเล็กน้อย / พบความชำรุดเสียหาย)
-3. ร่างข้อความสั้นๆ สำหรับบันทึกลงสมุดบันทึกรับคืน (Return Notes)`;
-
-      const payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: "image/jpeg",
-                data: currentInspectBase64
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              conditionGrade: { type: "STRING" },
-              findings: { type: "STRING" },
-              recommendedNotes: { type: "STRING" }
-            },
-            required: ["conditionGrade", "findings", "recommendedNotes"]
-          }
-        }
-      };
-
-      try {
-        let parsed = null;
-        try {
-          const responseData = await callGeminiApi(payload);
-          const jsonText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (jsonText) parsed = JSON.parse(jsonText);
-        } catch (apiErr) {
-          parsed = {
-            conditionGrade: "สภาพดีมาก (Grade A)",
-            findings: "ตรวจสอบภาพภายนอกพบว่าสภาพเครื่องสมบูรณ์ บานพับแน่นหนา จอภาพไม่มีรอยแตกร้าว พอร์ตเชื่อมต่อสะอาด",
-            recommendedNotes: "คืน: สภาพตัวเครื่องสมบูรณ์ ผ่านการตรวจสภาพด้วยภาพถ่าย ใช้งานได้ปกติ"
-          };
-        }
-
-        latestInspectNotes = parsed.recommendedNotes || parsed.findings;
-        document.getElementById("inspectGradeBadge").innerText = parsed.conditionGrade || "ตรวจแล้ว";
-        document.getElementById("inspectAnalysisText").innerHTML = `
-          <strong>ข้อสังเกต:</strong> ${parsed.findings}<br>
-          <strong class="text-purple-700">บันทึกรับคืน:</strong> ${latestInspectNotes}
-        `;
-        resultContainer.classList.remove("hidden");
-        showNotification("Gemini Vision ตรวจสอบสภาพเครื่องเรียบร้อยแล้ว", "success");
-      } catch (err) {
-        showNotification("การวิเคราะห์รูปภาพขัดข้อง: " + err.message, "error");
-      } finally {
-        btn.disabled = false;
-        spinner.classList.add("hidden");
-        btnText.innerText = "สแกนและวิเคราะห์สภาพด้วย Gemini";
-      }
-    }
-
-    async function confirmReturnWithAiNotes() {
-      if (!currentInspectTransId) return;
-
-      const notesToSave = latestInspectNotes || "ผ่านการตรวจสอบสภาพด้วยภาพถ่าย";
-      try {
-        const res = await callAPI("returnItem", {
-          transId: currentInspectTransId,
-          notes: notesToSave
-        });
-
-        if (res.status === "success") {
-          showNotification(res.message + " (พร้อมบันทึกผลการตรวจสภาพ)", "success");
-          closeAiInspectModal();
-          await refreshData();
-        } else {
-          showNotification(res.message, "error");
-          await refreshData();
-        }
-      } catch (err) {
-        showNotification("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์", "error");
-        await refreshData();
-      }
-    }
-
     /* Updated Google Apps Script code including Zero-Fail Self-Healing Department Management */
     const SELF_HEALING_GAS_CODE = `/**
  * IT Asset Borrow & Return - Google Apps Script (Self-Healing Full Edition)
- * จัดการ 4 แท็บ: Items, Logs, Categories, Departments (แก้ไขประวัติ, อุปกรณ์ และค้นหา)
+ * ฝ่ายเทคโนโลยีสารสนเทศ
+ * จัดการ 4 แท็บ: Items, Logs, Categories, Departments
  */
 
 function doPost(e) {
@@ -3157,19 +2993,20 @@ function handleGetInitialData() {
 
   // 3. ชีต Categories
   var catHeaders = ["category_name"];
-  var sampleCats = [["Laptop"], ["Monitor"], ["Projector"], ["Adapter"], ["Audio"], ["Tablet"], ["Other"]];
+  var sampleCats = [["Laptop"], ["Monitor"], ["Projector"], ["Adapter"], ["Audio"], ["Tablet"], ["Accessory"], ["Other"]];
   var catSheet = getOrCreateSheet(ss, "Categories", catHeaders, sampleCats);
 
   // 4. ชีต Departments (สร้างให้อัตโนมัติทันทีถ้ายังไม่มี)
   var deptHeaders = ["department_name"];
   var sampleDepts = [
-    ["IT Support & Infra"],
-    ["Marketing & Branding"],
-    ["HR & Training"],
-    ["Accounting & Finance"],
-    ["Sales & Business Dev"],
-    ["Operations & Supply Chain"],
-    ["Executive & Management"]
+    ["ฝ่ายเทคโนโลยีสารสนเทศ (IT)"],
+    ["สำนักเลขาธิการและประสานงาน"],
+    ["ฝ่ายสมาชิกสัมพันธ์และการบริการ"],
+    ["ฝ่ายส่งเสริมการค้าและเศรษฐกิจระหว่างประเทศ"],
+    ["ฝ่ายพัฒนาธุรกิจและนวัตกรรม"],
+    ["ฝ่ายประชาสัมพันธ์และสื่อสารองค์กร"],
+    ["ฝ่ายการเงินและการบัญชี"],
+    ["ฝ่ายทรัพยากรบุคคล (HR)"]
   ];
   var deptSheet = getOrCreateSheet(ss, "Departments", deptHeaders, sampleDepts);
 
@@ -3319,7 +3156,6 @@ function handleBorrowItem(data) {
     }
   }
 
-  // บันทึกแผนกใหม่อัตโนมัติหากยังไม่มีในชีต Departments
   if (data.dept) {
     var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
     var deptData = deptSheet.getDataRange().getValues();
@@ -3464,7 +3300,6 @@ function handleUpdateHistoryLog(data) {
 
   SpreadsheetApp.flush();
 
-  // ตรวจสอบรายการยืมทั้งหมดของอุปกรณ์ชิ้นนี้อีกครั้งก่อนเปลี่ยนสถานะใน Items
   if (targetItemId) {
     var updatedLogs = logSheet.getDataRange().getValues();
     var stillBorrowed = false;
@@ -3492,15 +3327,7 @@ function handleUpdateHistoryLog(data) {
 
 function handleAddDepartment(data) {
   var ss = getSpreadsheet();
-  var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], [
-    ["IT Support & Infra"],
-    ["Marketing & Branding"],
-    ["HR & Training"],
-    ["Accounting & Finance"],
-    ["Sales & Business Dev"],
-    ["Operations & Supply Chain"],
-    ["Executive & Management"]
-  ]);
+  var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
 
   var newDept = String(data.deptName || "").trim();
   if (!newDept) {
@@ -3611,9 +3438,6 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 
-    /* =========================================================
-     * SETUP MODAL, INITIALIZATION & HELPER FUNCTIONS
-     * ========================================================= */
     function updateConnectionStatus(connected) {
       const dot = document.getElementById("connStatusDot");
       const text = document.getElementById("connStatusText");
@@ -3708,7 +3532,6 @@ function jsonResponse(obj) {
       }
     }
 
-    // Auto-sync when user switches back to this tab or focuses window
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && state.webAppUrl) {
         refreshData(false);
@@ -3721,7 +3544,6 @@ function jsonResponse(obj) {
       }
     });
 
-    // Initialize Application on Load
     window.addEventListener("DOMContentLoaded", () => {
       const codeBlock = document.getElementById("gasCodeBlock");
       if (codeBlock) codeBlock.textContent = SELF_HEALING_GAS_CODE;
