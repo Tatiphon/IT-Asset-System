@@ -901,28 +901,43 @@
         </div>
 
         <!-- Quick Demo Switcher for fast verification -->
-        <div class="pt-2 border-t border-slate-100">
-          <span class="text-[11px] text-slate-500 block mb-2">ทดสอบสลับโหมดด่วน (สำหรับตรวจสอบสิทธิ์):</span>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="loginDemoAccount('tatitop07@gmail.com')" class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold transition truncate">
-              👑 Super Admin (tatitop07)
-            </button>
-            <button type="button" onclick="loginDemoAccount('wattanachai.mi@thaichamber.or.th')" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-semibold transition truncate">
-              🛡️ Admin (wattanachai.mi)
-            </button>
-            <button type="button" onclick="loginDemoAccount('somchai.user@thaichamber.or.th')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold transition truncate">
-              👤 User (@thaichamber.or.th)
-            </button>
-            <button type="button" onclick="loginDemoAccount('unauthorized.person@gmail.com')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[11px] font-semibold transition truncate">
-              🚫 บัญชีภายนอก (ติดบล็อก)
-            </button>
-          </div>
+      <div class="pt-2 border-t border-slate-100">
+        <span class="text-[11px] text-slate-500 block mb-2">เข้าสู่ระบบด้วยอีเมลองค์กร หรือเลือกบัญชีทดสอบด่วน:</span>
+        
+        <!-- Direct Email Login Form for Corporate Users -->
+        <div class="flex gap-1.5 mb-3">
+          <input type="email" id="manualLoginEmailInput" placeholder="กรอกอีเมล เช่น name@thaichamber.or.th" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-tcc-500 outline-none">
+          <button type="button" onclick="handleManualEmailLogin()" class="px-3 py-1.5 bg-tcc-600 hover:bg-tcc-700 text-white rounded-lg text-xs font-semibold shrink-0 transition">
+            เข้าสู่ระบบ
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="loginDemoAccount('tatitop07@gmail.com')" class="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold transition truncate" title="tatitop07@gmail.com">
+            👑 Super Admin (tatitop07)
+          </button>
+          <button type="button" onclick="loginDemoAccount('tatiphon.hi@thaichamber.or.th')" class="px-2.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-[11px] font-semibold transition truncate" title="tatiphon.hi@thaichamber.or.th">
+            👑 Super Admin (tatiphon.hi)
+          </button>
+          <button type="button" onclick="loginDemoAccount('wattanachai.mi@thaichamber.or.th')" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-semibold transition truncate" title="wattanachai.mi@thaichamber.or.th">
+            🛡️ Admin (wattanachai.mi)
+          </button>
+          <button type="button" onclick="loginDemoAccount('supakon.su@thaichamber.or.th')" class="px-2.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-[11px] font-semibold transition truncate" title="supakon.su@thaichamber.or.th">
+            🛡️ Admin (supakon.su)
+          </button>
+          <button type="button" onclick="loginDemoAccount('somchai.user@thaichamber.or.th')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-semibold transition truncate">
+            👤 User (@thaichamber.or.th)
+          </button>
+          <button type="button" onclick="loginDemoAccount('unauthorized.person@gmail.com')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[11px] font-semibold transition truncate">
+            🚫 บัญชีภายนอก (ติดบล็อก)
+          </button>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- MODAL: Add / Edit User Role Modal -->
+<!-- MODAL: Add / Edit User Role Modal -->
   <div id="roleModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 animate-fadeIn">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -1298,23 +1313,45 @@
     function getInitialDemoLogs() {
       const borrows = getInitialDemoBorrows();
       return [
-        { trans_id: borrows[0].trans_id, timestamp: borrows[0].borrow_date + " 09:30", item_id: borrows[0].item_id, borrower_name: borrows[0].borrower_name, borrower_dept: borrows[0].borrower_dept, borrower_contact: "kittisak@thaichamber.or.th", borrow_date: borrows[0].borrow_date, expected_return: borrows[0].expected_return, actual_return: "", trans_status: "Borrowed", notes: "งานนำเสนอแผนงานประจำปีหอการค้าไทย" },
-        { trans_id: borrows[1].trans_id, timestamp: borrows[1].borrow_date + " 14:15", item_id: borrows[1].item_id, borrower_name: borrows[1].borrower_name, borrower_dept: borrows[1].borrower_dept, borrower_contact: "suwimon@thaichamber.or.th", borrow_date: borrows[1].borrow_date, expected_return: borrows[1].expected_return, actual_return: "", trans_status: "Borrowed", notes: "บันทึกเสียงสัมมนาผู้ประกอบการ" },
-        { trans_id: "TRX-0985", timestamp: getOffsetDate(-35) + " 10:00", item_id: "IT-001", borrower_name: "กิตติศักดิ์ พัฒนพงศ์", borrower_dept: "ฝ่ายประชาสัมพันธ์และสื่อสารองค์กร", borrower_contact: "kittisak@thaichamber.or.th", borrow_date: getOffsetDate(-35), expected_return: getOffsetDate(-30), actual_return: getOffsetDate(-30) + " 16:30", trans_status: "Returned", notes: "สภาพเรียบร้อย" },
-        { trans_id: "TRX-0972", timestamp: getOffsetDate(-62) + " 13:20", item_id: "IT-003", borrower_name: "นราธิป ชัยชนะ", borrower_dept: "ฝ่ายส่งเสริมการค้าและเศรษฐกิจระหว่างประเทศ", borrower_contact: "narathip@thaichamber.or.th", borrow_date: getOffsetDate(-62), expected_return: getOffsetDate(-58), actual_return: getOffsetDate(-58) + " 17:00", trans_status: "Returned", notes: "คืนอุปกรณ์ครบ" }
+        { trans_id: borrows[0].trans_id, timestamp: borrows[0].borrow_date + " 09:30", item_id: borrows[0].item_id, borrower_name: borrows[0].borrower_name, borrower_dept: borrows[0].borrower_dept, borrower_contact: borrows[0].borrower_contact, borrow_date: borrows[0].borrow_date, expected_return: borrows[0].expected_return, actual_return: "", trans_status: "Borrowed", notes: "งานนำเสนอแผนงานประจำปีหอการค้าไทย" },
+        { trans_id: borrows[1].trans_id, timestamp: borrows[1].borrow_date + " 14:15", item_id: borrows[1].item_id, borrower_name: borrows[1].borrower_name, borrower_dept: borrows[1].borrower_dept, borrower_contact: borrows[1].borrower_contact, borrow_date: borrows[1].borrow_date, expected_return: borrows[1].expected_return, actual_return: "", trans_status: "Borrowed", notes: "บันทึกเสียงสัมมนาผู้ประกอบการ" },
+        { trans_id: "TRX-0985", timestamp: getOffsetDate(-14) + " 10:00", item_id: "IT-001", borrower_name: "วิชัย สมบูรณ์", borrower_dept: "ฝ่ายเทคโนโลยีสารสนเทศ (IT)", borrower_contact: "wichai@thaichamber.or.th", borrow_date: getOffsetDate(-14), expected_return: getOffsetDate(-10), actual_return: getOffsetDate(-10) + " 16:30", trans_status: "Returned", notes: "คืน: สภาพสมบูรณ์พร้อมสายชาร์จแท้" },
+        { trans_id: "TRX-0972", timestamp: getOffsetDate(-35) + " 13:20", item_id: "IT-003", borrower_name: "ดนัย ภักดี", borrower_dept: "ฝ่ายส่งเสริมการค้าและเศรษฐกิจระหว่างประเทศ", borrower_contact: "danai@thaichamber.or.th", borrow_date: getOffsetDate(-35), expected_return: getOffsetDate(-32), actual_return: getOffsetDate(-32) + " 17:00", trans_status: "Returned", notes: "คืน: อุปกรณ์ทำงานปกติ" }
       ];
     }
 
-    // Load initial user roles from storage
+    // Load initial user roles from storage and always merge with BUILTIN_ROLES
+    function mergeWithBuiltinRoles(customList) {
+      const merged = [...BUILTIN_ROLES.map(r => ({ ...r }))];
+      if (Array.isArray(customList)) {
+        customList.forEach(custom => {
+          if (!custom || !custom.email) return;
+          const idx = merged.findIndex(m => m.email.toLowerCase() === custom.email.toLowerCase());
+          if (idx !== -1) {
+            // Keep Super Admin protection for primary accounts
+            const isPrimarySuper = merged[idx].email === "tatitop07@gmail.com" || merged[idx].email === "tatiphon.hi@thaichamber.or.th";
+            merged[idx] = {
+              ...merged[idx],
+              ...custom,
+              role: isPrimarySuper ? "superadmin" : (custom.role || merged[idx].role)
+            };
+          } else {
+            merged.push(custom);
+          }
+        });
+      }
+      return merged;
+    }
+
     function loadSavedUserRoles() {
       const saved = localStorage.getItem(STORAGE_KEY_ROLES);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          return mergeWithBuiltinRoles(parsed);
         } catch (e) {}
       }
-      return JSON.parse(JSON.stringify(BUILTIN_ROLES));
+      return mergeWithBuiltinRoles([]);
     }
 
     const state = {
@@ -1365,16 +1402,29 @@
         return { allowed: true, role: foundInList.role, name: foundInList.name || email.split('@')[0] };
       }
 
-      // Check domain restriction: MUST end with @thaichamber.or.th (or @thaichamber.org)
-      if (lowerEmail.endsWith("@thaichamber.or.th") || lowerEmail.endsWith("@thaichamber.org")) {
+      // Strictly enforce @thaichamber.or.th for general users (Requirement 1.3)
+      if (lowerEmail.endsWith("@thaichamber.or.th")) {
         return { allowed: true, role: "user", name: email.split('@')[0] };
       }
 
       // Disallowed external domain
       return {
         allowed: false,
-        reason: "ระบบอนุญาตเฉพาะบัญชีอีเมลองค์กร @thaichamber.or.th เท่านั้น (หรือบัญชีผู้ดูแลระบบที่ได้รับอนุญาต)"
+        reason: "ผู้ใช้งานทั่วไปต้องใช้อีเมลที่ลงท้ายด้วย @thaichamber.or.th เท่านั้น"
       };
+    }
+
+    function handleManualEmailLogin() {
+      const input = document.getElementById("manualLoginEmailInput");
+      const email = (input?.value || "").trim();
+      if (!email) {
+        showNotification("กรุณากรอกอีเมลก่อนเข้าสู่ระบบ", "warning");
+        return;
+      }
+      const success = processUserLogin(email, null, null);
+      if (success && input) {
+        input.value = "";
+      }
     }
 
     function handleGoogleCredentialResponse(response) {
@@ -1490,14 +1540,24 @@
 
       // Toggle Super Admin only controls
       document.querySelectorAll(".superadmin-only").forEach(el => {
-        if (isSuperAdmin) el.classList.remove("hidden");
-        else el.classList.add("hidden");
+        if (isSuperAdmin) {
+          el.classList.remove("hidden");
+          el.classList.add("inline-flex");
+        } else {
+          el.classList.add("hidden");
+          el.classList.remove("inline-flex");
+        }
       });
 
       // Toggle Admin & Super Admin controls
       document.querySelectorAll(".admin-only").forEach(el => {
-        if (isAdmin) el.classList.remove("hidden");
-        else el.classList.add("hidden");
+        if (isAdmin) {
+          el.classList.remove("hidden");
+          el.classList.add("inline-flex");
+        } else {
+          el.classList.add("hidden");
+          el.classList.remove("inline-flex");
+        }
       });
 
       // Toggle Admin tabs in tab bar
@@ -1616,6 +1676,13 @@
 
       // Sync with Google Sheets backend
       callAPI("saveUserRole", { roleData: roleObj }, true);
+
+      // If current logged-in user updated their own role, refresh current session role
+      if (state.currentUser && state.currentUser.email.toLowerCase() === email) {
+        state.currentUser.role = role;
+        if (name) state.currentUser.name = name;
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(state.currentUser));
+      }
 
       closeRoleModal();
       renderRolesTable();
@@ -2123,6 +2190,104 @@
               });
               break;
             }
+            case "updateHistoryLog": {
+              const targetId = String(data.transId || "").trim().toLowerCase();
+              const logEntry = state.allLogs.find(l => String(l.trans_id).trim().toLowerCase() === targetId);
+              if (!logEntry) {
+                resolve({ status: "error", message: "ไม่พบรหัสธุรกรรมนี้ในระบบ" });
+                return;
+              }
+
+              const newStatus = data.transStatus || logEntry.trans_status;
+              logEntry.borrower_name = data.borrowerName || logEntry.borrower_name;
+              logEntry.borrower_dept = data.borrowerDept || logEntry.borrower_dept;
+              logEntry.borrower_contact = data.borrowerContact !== undefined ? data.borrowerContact : logEntry.borrower_contact;
+              logEntry.borrow_date = data.borrowDate || logEntry.borrow_date;
+              logEntry.expected_return = data.expectedReturn || logEntry.expected_return;
+              logEntry.trans_status = newStatus;
+              logEntry.actual_return = newStatus === "Borrowed" ? "" : (data.actualReturn || logEntry.actual_return || getLocalTimestamp());
+              logEntry.notes = data.notes !== undefined ? data.notes : logEntry.notes;
+
+              const bIndex = state.activeBorrows.findIndex(b => String(b.trans_id).trim().toLowerCase() === targetId);
+              if (newStatus === "Returned" && bIndex !== -1) {
+                state.activeBorrows.splice(bIndex, 1);
+              } else if (newStatus === "Borrowed" && bIndex === -1) {
+                state.activeBorrows.push({
+                  trans_id: logEntry.trans_id,
+                  item_id: logEntry.item_id,
+                  borrower_name: logEntry.borrower_name,
+                  borrower_dept: logEntry.borrower_dept,
+                  borrower_contact: logEntry.borrower_contact,
+                  borrow_date: logEntry.borrow_date,
+                  expected_return: logEntry.expected_return
+                });
+              } else if (bIndex !== -1) {
+                state.activeBorrows[bIndex].borrower_name = logEntry.borrower_name;
+                state.activeBorrows[bIndex].borrower_dept = logEntry.borrower_dept;
+                state.activeBorrows[bIndex].borrower_contact = logEntry.borrower_contact;
+                state.activeBorrows[bIndex].borrow_date = logEntry.borrow_date;
+                state.activeBorrows[bIndex].expected_return = logEntry.expected_return;
+              }
+
+              syncItemStatuses();
+              resolve({ status: "success", message: `แก้ไขประวัติ [${data.transId}] สำเร็จ` });
+              break;
+            }
+            case "addDepartment": {
+              const newDept = String(data.deptName || "").trim();
+              if (newDept && !state.departments.some(d => d.toLowerCase() === newDept.toLowerCase())) {
+                state.departments.push(newDept);
+              }
+              resolve({ status: "success", message: `เพิ่มแผนก "${newDept}" สำเร็จ` });
+              break;
+            }
+            case "updateDepartment": {
+              const oldDept = String(data.oldDeptName || "").trim().toLowerCase();
+              const newDept = String(data.newDeptName || "").trim();
+              const idx = state.departments.findIndex(d => d.toLowerCase() === oldDept);
+              if (idx !== -1 && newDept) state.departments[idx] = newDept;
+              resolve({ status: "success", message: `แก้ไขชื่อแผนกเป็น "${newDept}" สำเร็จ` });
+              break;
+            }
+            case "deleteDepartment": {
+              const targetDept = String(data.deptName || "").trim().toLowerCase();
+              state.departments = state.departments.filter(d => d.toLowerCase() !== targetDept);
+              resolve({ status: "success", message: "ลบแผนกเรียบร้อยแล้ว" });
+              break;
+            }
+            case "addItem": {
+              const exists = state.items.some(i => String(i.item_id).toLowerCase() === String(data.itemId).toLowerCase());
+              if (exists) {
+                resolve({ status: "error", message: "รหัสอุปกรณ์นี้มีอยู่ในระบบแล้ว" });
+                return;
+              }
+              if (data.category && !state.categories.includes(data.category)) {
+                state.categories.push(data.category);
+              }
+              state.items.push({
+                item_id: data.itemId,
+                item_name: data.itemName,
+                category: data.category || "Other",
+                serial_number: data.serialNumber || "-",
+                status: "Available"
+              });
+              resolve({ status: "success", message: `เพิ่มอุปกรณ์ [${data.itemId}] สำเร็จ` });
+              break;
+            }
+            case "updateItem": {
+              const item = state.items.find(i => String(i.item_id).toLowerCase() === String(data.itemId).toLowerCase());
+              if (item) {
+                item.item_name = data.itemName || item.item_name;
+                item.category = data.category || item.category;
+                item.serial_number = data.serialNumber !== undefined ? data.serialNumber : item.serial_number;
+                if (data.status && !isItemBorrowed(item)) {
+                  item.status = data.status;
+                }
+              }
+              syncItemStatuses();
+              resolve({ status: "success", message: `อัปเดตอุปกรณ์ [${data.itemId}] สำเร็จ` });
+              break;
+            }
             case "saveUserRole": {
               resolve({ status: "success", message: "บันทึกสิทธิ์สำเร็จ" });
               break;
@@ -2186,7 +2351,7 @@
           if (res.categories && res.categories.length > 0) state.categories = res.categories;
           if (res.departments && res.departments.length > 0) state.departments = res.departments;
           if (res.userRoles && res.userRoles.length > 0) {
-            state.userRoles = res.userRoles;
+            state.userRoles = mergeWithBuiltinRoles(res.userRoles);
             localStorage.setItem(STORAGE_KEY_ROLES, JSON.stringify(state.userRoles));
           }
 
@@ -2391,7 +2556,14 @@
       const filtered = state.departments.filter(dept => !q || dept.toLowerCase().includes(q));
 
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">ไม่พบแผนก "${q}"</div>`;
+        container.innerHTML = `
+          <div class="p-3 text-center text-xs text-slate-400">
+            ไม่พบแผนก "${escapeQuotes(q)}"
+            <button type="button" onclick="quickAddDeptFromInput('${escapeQuotes(q)}')" class="mt-1 text-tcc-600 font-semibold underline block mx-auto text-xs">
+              + ใช้และบันทึก "${escapeQuotes(q)}" เป็นแผนกใหม่
+            </button>
+          </div>
+        `;
         return;
       }
 
@@ -2401,6 +2573,16 @@
           <span class="text-[10px] text-slate-400">เลือก</span>
         </div>
       `).join("");
+    }
+
+    function quickAddDeptFromInput(deptName) {
+      if (!deptName) return;
+      selectDepartment(deptName);
+      if (!state.departments.includes(deptName)) {
+        state.departments.push(deptName);
+        callAPI("addDepartment", { deptName }, true);
+      }
+      showNotification(`เลือกและเพิ่มแผนก "${deptName}" เรียบร้อยแล้ว`, "success");
     }
 
     function renderDepartmentDropdown() {
@@ -2489,9 +2671,10 @@
       }
 
       const contactVal = document.getElementById("borrowerContact").value.trim();
-      // Requirement 1.3: User contact check
-      if (state.currentUser.role === "user" && !contactVal.toLowerCase().endsWith("@thaichamber.or.th") && !contactVal.includes("@")) {
-        // Allow phone numbers if entered alongside authorized email
+      // Requirement 1.3: Verify logged-in user session email ends with @thaichamber.or.th if role is general user
+      if (state.currentUser.role === "user" && !state.currentUser.email.toLowerCase().endsWith("@thaichamber.or.th")) {
+        showNotification("ผู้ใช้งานทั่วไปต้องเข้าสู่ระบบด้วยอีเมล @thaichamber.or.th เท่านั้น", "error");
+        return;
       }
 
       const btn = document.getElementById("btnSubmitBorrow");
@@ -2762,7 +2945,10 @@ function doPost(e) {
       case "returnItem": return handleReturnItem(data);
       case "updateHistoryLog": return handleUpdateHistoryLog(data);
       case "addDepartment": return handleAddDepartment(data);
+      case "updateDepartment": return handleUpdateDepartment(data);
+      case "deleteDepartment": return handleDeleteDepartment(data);
       case "addItem": return handleAddItem(data);
+      case "updateItem": return handleUpdateItem(data);
       case "saveUserRole": return handleSaveUserRole(data);
       case "deleteUserRole": return handleDeleteUserRole(data);
       default: return jsonResponse({ status: "error", message: "Invalid action: " + action });
@@ -2778,13 +2964,223 @@ function getSpreadsheet() { return SpreadsheetApp.getActiveSpreadsheet(); }
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
+function formatGASDate(val, pattern) {
+  if (!val) return "";
+  try {
+    var d = (val instanceof Date) ? val : new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    return Utilities.formatDate(d, "GMT+7", pattern);
+  } catch(e) { return String(val); }
+}
+function getOrCreateSheet(ss, sheetName, headers, defaultRows) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f1f5f9");
+    if (defaultRows && defaultRows.length > 0) {
+      defaultRows.forEach(function(r) { sheet.appendRow(r); });
+    }
+  } else if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f1f5f9");
+    if (defaultRows && defaultRows.length > 0) {
+      defaultRows.forEach(function(r) { sheet.appendRow(r); });
+    }
+  }
+  return sheet;
+}
+function handleGetInitialData() {
+  var ss = getSpreadsheet();
+  var itemSheet = getOrCreateSheet(ss, "Items", ["item_id", "item_name", "category", "serial_number", "status"], []);
+  var logSheet = getOrCreateSheet(ss, "Logs", ["trans_id", "timestamp", "item_id", "borrower_name", "borrower_dept", "borrower_contact", "borrow_date", "expected_return", "actual_return", "trans_status", "notes"], []);
+  var catSheet = getOrCreateSheet(ss, "Categories", ["category_name"], [["Laptop"], ["Monitor"], ["Projector"], ["Adapter"], ["Audio"], ["Tablet"], ["Accessory"], ["Other"]]);
+  var deptSheet = getOrCreateSheet(ss, "Departments", ["department_name"], [["ฝ่ายเทคโนโลยีสารสนเทศ (IT)"], ["สำนักเลขาธิการและประสานงาน"], ["ฝ่ายสมาชิกสัมพันธ์และการบริการ"]]);
+  var roleSheet = getOrCreateSheet(ss, "UserRoles", ["email", "name", "role", "remark", "updated_at"], [
+    ["tatitop07@gmail.com", "Tatitop (Super Admin)", "superadmin", "ผู้ดูแลระบบหลัก", new Date()],
+    ["tatiphon.hi@thaichamber.or.th", "Tatiphon (Super Admin)", "superadmin", "ผู้ดูแลระบบหลัก หอการค้าไทย", new Date()],
+    ["wattanachai.mi@thaichamber.or.th", "Wattanachai (Admin)", "admin", "เจ้าหน้าที่ฝ่ายไอที", new Date()],
+    ["supakon.su@thaichamber.or.th", "Supakon (Admin)", "admin", "เจ้าหน้าที่ฝ่ายไอที", new Date()]
+  ]);
 
+  var categories = catSheet.getDataRange().getValues().slice(1).map(function(r){ return String(r[0] || "").trim(); }).filter(Boolean);
+  var departments = deptSheet.getDataRange().getValues().slice(1).map(function(r){ return String(r[0] || "").trim(); }).filter(Boolean);
+  var userRoles = roleSheet.getDataRange().getValues().slice(1).filter(function(r){ return r[0]; }).map(function(r){
+    return { email: String(r[0]).trim(), name: String(r[1] || ""), role: String(r[2] || "user"), remark: String(r[3] || "") };
+  });
+
+  var logData = logSheet.getDataRange().getValues();
+  var activeBorrows = [];
+  var allLogs = [];
+  var currentlyBorrowedMap = {};
+  for (var j = 1; j < logData.length; j++) {
+    if (!logData[j][0]) continue;
+    var rawStatus = String(logData[j][9] || "").trim().toLowerCase();
+    var isBorrowActive = (rawStatus === "borrowed" || rawStatus === "กำลังถูกยืม" || rawStatus === "กำลังยืม");
+    var bId = String(logData[j][2] || "").trim();
+    var logItem = {
+      trans_id: String(logData[j][0]),
+      timestamp: formatGASDate(logData[j][1], "yyyy-MM-dd HH:mm"),
+      item_id: bId,
+      borrower_name: String(logData[j][3] || ""),
+      borrower_dept: String(logData[j][4] || ""),
+      borrower_contact: String(logData[j][5] || ""),
+      borrow_date: formatGASDate(logData[j][6], "yyyy-MM-dd"),
+      expected_return: formatGASDate(logData[j][7], "yyyy-MM-dd"),
+      actual_return: formatGASDate(logData[j][8], "yyyy-MM-dd HH:mm"),
+      trans_status: isBorrowActive ? "Borrowed" : "Returned",
+      notes: String(logData[j][10] || "")
+    };
+    allLogs.unshift(logItem);
+    if (isBorrowActive && bId) {
+      currentlyBorrowedMap[bId.toLowerCase()] = true;
+      activeBorrows.push(logItem);
+    }
+  }
+
+  var itemData = itemSheet.getDataRange().getValues();
+  var items = [];
+  for (var i = 1; i < itemData.length; i++) {
+    if (!itemData[i][0]) continue;
+    var cid = String(itemData[i][0]).trim();
+    var cStat = currentlyBorrowedMap[cid.toLowerCase()] ? "Borrowed" : (String(itemData[i][4] || "Available").trim() === "Maintenance" ? "Maintenance" : "Available");
+    items.push({ item_id: cid, item_name: String(itemData[i][1]), category: String(itemData[i][2]), serial_number: String(itemData[i][3]), status: cStat });
+  }
+  return jsonResponse({ status: "success", items: items, activeBorrows: activeBorrows, allLogs: allLogs, categories: categories, departments: departments, userRoles: userRoles });
+}
+function handleBorrowItem(data) {
+  var ss = getSpreadsheet();
+  var itemSheet = ss.getSheetByName("Items");
+  var logSheet = ss.getSheetByName("Logs");
+  var itemIds = data.itemIds || (data.itemId ? [data.itemId] : []);
+  var itemData = itemSheet.getDataRange().getValues();
+  var batchId = "TRX-" + new Date().getTime();
+  var now = new Date();
+  for (var k = 0; k < itemIds.length; k++) {
+    var tid = String(itemIds[k]).trim().toLowerCase();
+    for (var i = 1; i < itemData.length; i++) {
+      if (String(itemData[i][0]).trim().toLowerCase() === tid) {
+        itemSheet.getRange(i + 1, 5).setValue("Borrowed");
+        var transId = itemIds.length > 1 ? (batchId + "-" + (k + 1)) : batchId;
+        logSheet.appendRow([transId, now, itemData[i][0], data.borrowerName, data.dept, data.contact, data.borrowDate, data.expectedReturn, "", "Borrowed", data.notes || ""]);
+        break;
+      }
+    }
+  }
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "บันทึกการยืมสำเร็จ" });
+}
+function handleReturnItem(data) {
+  var ss = getSpreadsheet();
+  var itemSheet = ss.getSheetByName("Items");
+  var logSheet = ss.getSheetByName("Logs");
+  var targetTransList = data.transIds || (data.transId ? [data.transId] : []);
+  var logData = logSheet.getDataRange().getValues();
+  var itemData = itemSheet.getDataRange().getValues();
+  var now = new Date();
+  var itemsToMakeAvailable = {};
+  for (var t = 0; t < targetTransList.length; t++) {
+    var searchId = String(targetTransList[t]).trim().toLowerCase();
+    for (var j = 1; j < logData.length; j++) {
+      if (String(logData[j][0]).trim().toLowerCase() === searchId) {
+        logSheet.getRange(j + 1, 9).setValue(now);
+        logSheet.getRange(j + 1, 10).setValue("Returned");
+        itemsToMakeAvailable[String(logData[j][2]).trim().toLowerCase()] = true;
+        break;
+      }
+    }
+  }
+  for (var i = 1; i < itemData.length; i++) {
+    if (itemsToMakeAvailable[String(itemData[i][0]).trim().toLowerCase()]) {
+      itemSheet.getRange(i + 1, 5).setValue("Available");
+    }
+  }
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "รับคืนอุปกรณ์เรียบร้อยแล้ว" });
+}
+function handleUpdateHistoryLog(data) {
+  var ss = getSpreadsheet();
+  var logSheet = ss.getSheetByName("Logs");
+  var logData = logSheet.getDataRange().getValues();
+  var searchId = String(data.transId || "").trim().toLowerCase();
+  for (var j = 1; j < logData.length; j++) {
+    if (String(logData[j][0]).trim().toLowerCase() === searchId) {
+      var r = j + 1;
+      if (data.borrowerName !== undefined) logSheet.getRange(r, 4).setValue(data.borrowerName);
+      if (data.borrowerDept !== undefined) logSheet.getRange(r, 5).setValue(data.borrowerDept);
+      if (data.borrowerContact !== undefined) logSheet.getRange(r, 6).setValue(data.borrowerContact);
+      if (data.borrowDate !== undefined) logSheet.getRange(r, 7).setValue(data.borrowDate);
+      if (data.expectedReturn !== undefined) logSheet.getRange(r, 8).setValue(data.expectedReturn);
+      if (data.actualReturn !== undefined) logSheet.getRange(r, 9).setValue(data.actualReturn);
+      if (data.transStatus !== undefined) logSheet.getRange(r, 10).setValue(data.transStatus);
+      if (data.notes !== undefined) logSheet.getRange(r, 11).setValue(data.notes);
+      break;
+    }
+  }
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "อัปเดตประวัติเรียบร้อยแล้ว" });
+}
+function handleAddDepartment(data) {
+  var ss = getSpreadsheet();
+  var sheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
+  if (data.deptName) sheet.appendRow([String(data.deptName).trim()]);
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "เพิ่มแผนกสำเร็จ" });
+}
+function handleUpdateDepartment(data) {
+  var ss = getSpreadsheet();
+  var sheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
+  var vals = sheet.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]).trim().toLowerCase() === String(data.oldDeptName).trim().toLowerCase()) {
+      sheet.getRange(i + 1, 1).setValue(String(data.newDeptName).trim());
+      break;
+    }
+  }
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "แก้ไขชื่อแผนกสำเร็จ" });
+}
+function handleDeleteDepartment(data) {
+  var ss = getSpreadsheet();
+  var sheet = getOrCreateSheet(ss, "Departments", ["department_name"], []);
+  var vals = sheet.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]).trim().toLowerCase() === String(data.deptName).trim().toLowerCase()) {
+      sheet.deleteRow(i + 1);
+      break;
+    }
+  }
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "ลบแผนกสำเร็จ" });
+}
+function handleAddItem(data) {
+  var ss = getSpreadsheet();
+  var sheet = getOrCreateSheet(ss, "Items", ["item_id", "item_name", "category", "serial_number", "status"], []);
+  sheet.appendRow([data.itemId, data.itemName, data.category, data.serialNumber || "-", "Available"]);
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "เพิ่มอุปกรณ์สำเร็จ" });
+}
+function handleUpdateItem(data) {
+  var ss = getSpreadsheet();
+  var sheet = getOrCreateSheet(ss, "Items", ["item_id", "item_name", "category", "serial_number", "status"], []);
+  var vals = sheet.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]).trim().toLowerCase() === String(data.itemId).trim().toLowerCase()) {
+      if (data.itemName) sheet.getRange(i + 1, 2).setValue(data.itemName);
+      if (data.category) sheet.getRange(i + 1, 3).setValue(data.category);
+      if (data.serialNumber !== undefined) sheet.getRange(i + 1, 4).setValue(data.serialNumber);
+      if (data.status) sheet.getRange(i + 1, 5).setValue(data.status);
+      break;
+    }
+  }
+  SpreadsheetApp.flush();
+  return jsonResponse({ status: "success", message: "อัปเดตอุปกรณ์สำเร็จ" });
+}
 function handleSaveUserRole(data) {
   var ss = getSpreadsheet();
   var sheet = getOrCreateSheet(ss, "UserRoles", ["email", "name", "role", "remark", "updated_at"], []);
   var r = data.roleData;
   if (!r || !r.email) return jsonResponse({ status: "error", message: "Missing email" });
-
   var values = sheet.getDataRange().getValues();
   var targetRow = -1;
   for (var i = 1; i < values.length; i++) {
@@ -2793,7 +3189,6 @@ function handleSaveUserRole(data) {
       break;
     }
   }
-
   var now = new Date();
   if (targetRow > 0) {
     sheet.getRange(targetRow, 2).setValue(r.name || "");
@@ -2806,7 +3201,6 @@ function handleSaveUserRole(data) {
   SpreadsheetApp.flush();
   return jsonResponse({ status: "success", message: "User role saved" });
 }
-
 function handleDeleteUserRole(data) {
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName("UserRoles");
@@ -2826,6 +3220,7 @@ function handleDeleteUserRole(data) {
       const dot = document.getElementById("connStatusDot");
       const text = document.getElementById("connStatusText");
       if (!dot || !text) return;
+
       if (connected && state.webAppUrl && state.isLive) {
         dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
         text.innerText = "เชื่อมต่อ Google Sheets แล้ว (Real-time)";
@@ -2838,58 +3233,151 @@ function handleDeleteUserRole(data) {
     }
 
     function openSetupModal() {
-      document.getElementById("inputWebAppUrl").value = state.webAppUrl || "";
-      document.getElementById("gasCodeBlock").textContent = SELF_HEALING_GAS_CODE;
+      const urlInput = document.getElementById("inputWebAppUrl");
+      if (urlInput) urlInput.value = state.webAppUrl || "";
+      const codeBlock = document.getElementById("gasCodeBlock");
+      if (codeBlock) codeBlock.textContent = SELF_HEALING_GAS_CODE;
       document.getElementById("setupModal").classList.remove("hidden");
     }
-    function closeSetupModal() { document.getElementById("setupModal").classList.add("hidden"); }
 
-    function saveWebAppUrl() {
-      const val = document.getElementById("inputWebAppUrl").value.trim();
-      if (val) {
-        state.webAppUrl = val;
-        localStorage.setItem(STORAGE_KEY_URL, val);
-      }
-      closeSetupModal();
-      showNotification("บันทึกการตั้งค่าเรียบร้อยแล้ว", "success");
-      refreshData(true);
+    function closeSetupModal() {
+      document.getElementById("setupModal").classList.add("hidden");
     }
 
-    function resetToDemoMode() {
+    async function saveWebAppUrl() {
+      const val = document.getElementById("inputWebAppUrl").value.trim();
+      if (!val) {
+        showNotification("กรุณาวาง Web App URL ที่ได้จากการ Deploy", "warning");
+        return;
+      }
+      state.webAppUrl = val;
+      state.isLive = true;
+      localStorage.setItem(STORAGE_KEY_URL, val);
+      closeSetupModal();
+      showNotification("บันทึก Web App URL เรียบร้อย กำลังดึงข้อมูลจาก Google Sheets...", "info");
+      await refreshData(true);
+    }
+
+    async function resetToDemoMode() {
       state.webAppUrl = "";
       state.isLive = false;
       localStorage.setItem(STORAGE_KEY_URL, "");
+      state.items = JSON.parse(JSON.stringify(INITIAL_DEMO_ITEMS));
+      state.activeBorrows = getInitialDemoBorrows();
+      state.allLogs = getInitialDemoLogs();
+      state.categories = [...INITIAL_DEMO_CATEGORIES];
+      state.departments = [...INITIAL_DEMO_DEPTS];
       closeSetupModal();
       updateConnectionStatus(false);
       renderAll();
-      showNotification("สลับมาใช้โหมดจำลองเรียบร้อย", "info");
+      showNotification("สลับมาใช้โหมดจำลอง (Demo Mode) เรียบร้อยแล้ว", "info");
     }
 
     function copyGasCode() {
-      const ta = document.createElement("textarea");
-      ta.value = SELF_HEALING_GAS_CODE;
-      ta.style.position = "fixed";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      showNotification("คัดลอกโค้ด Google Apps Script เรียบร้อย", "success");
+      const textarea = document.createElement("textarea");
+      textarea.value = SELF_HEALING_GAS_CODE;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        showNotification("คัดลอกโค้ด Google Apps Script (Code.gs) เรียบร้อยแล้ว!", "success");
+      } catch (err) {
+        showNotification("ไม่สามารถคัดลอกโค้ดได้", "error");
+      }
+      document.body.removeChild(textarea);
     }
 
-    function openAddItemModal() { document.getElementById("addItemModal").classList.remove("hidden"); }
+    function openAddItemModal() {
+      renderCategoryDropdowns();
+      const nextNum = state.items.length + 1;
+      const suggestedId = "IT-" + String(nextNum).padStart(3, "0");
+      const idInput = document.getElementById("newItemId");
+      if (idInput && !idInput.value) idInput.value = suggestedId;
+      document.getElementById("addItemModal").classList.remove("hidden");
+    }
     function closeAddItemModal() { document.getElementById("addItemModal").classList.add("hidden"); }
-    function openDeptManagementModal() { renderDeptManageList(); document.getElementById("deptManageModal").classList.remove("hidden"); }
-    function closeDeptManagementModal() { document.getElementById("deptManageModal").classList.add("hidden"); }
+
+    let editingDeptIndex = -1;
+
+    function openDeptManagementModal(presetName = "") {
+      editingDeptIndex = -1;
+      const input = document.getElementById("newDepartmentNameInput");
+      if (input) input.value = presetName;
+      renderDeptManageList();
+      document.getElementById("deptManageModal").classList.remove("hidden");
+    }
+    function closeDeptManagementModal() {
+      editingDeptIndex = -1;
+      document.getElementById("deptManageModal").classList.add("hidden");
+    }
 
     function renderDeptManageList() {
       const container = document.getElementById("deptManageListContainer");
       document.getElementById("deptCountLabel").innerText = state.departments.length;
       if (!container) return;
-      container.innerHTML = state.departments.map(d => `
-        <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs">
-          <span class="font-medium text-slate-800">${d}</span>
-        </div>
-      `).join("");
+
+      if (state.departments.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 p-3 text-center">ยังไม่มีรายชื่อแผนก</p>';
+        return;
+      }
+
+      container.innerHTML = state.departments.map((d, idx) => {
+        if (editingDeptIndex === idx) {
+          return `
+            <div class="flex items-center gap-1.5 p-2 bg-tcc-50 rounded-lg border border-tcc-300 text-xs">
+              <input type="text" id="inlineEditDeptInput-${idx}" value="${escapeQuotes(d)}" class="flex-1 px-2 py-1 rounded border border-tcc-300 text-xs bg-white focus:outline-none">
+              <button type="button" onclick="saveInlineEditDept(${idx}, '${escapeQuotes(d)}')" class="px-2.5 py-1 bg-tcc-600 text-white rounded font-semibold text-[11px]">บันทึก</button>
+              <button type="button" onclick="cancelInlineEditDept()" class="px-2 py-1 bg-white text-slate-600 rounded border border-slate-200 text-[11px]">ยกเลิก</button>
+            </div>
+          `;
+        }
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs hover:border-slate-300 transition">
+            <span class="font-medium text-slate-800">${d}</span>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="startInlineEditDept(${idx})" class="px-2 py-1 text-tcc-600 hover:bg-tcc-50 rounded font-medium text-[11px]">✏️ แก้ไข</button>
+              <button type="button" onclick="handleDeleteDepartment('${escapeQuotes(d)}')" class="px-1.5 py-1 text-rose-500 hover:bg-rose-50 rounded text-[11px]">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function startInlineEditDept(idx) {
+      editingDeptIndex = idx;
+      renderDeptManageList();
+      const input = document.getElementById(`inlineEditDeptInput-${idx}`);
+      if (input) { input.focus(); input.select(); }
+    }
+
+    function cancelInlineEditDept() {
+      editingDeptIndex = -1;
+      renderDeptManageList();
+    }
+
+    async function saveInlineEditDept(idx, oldName) {
+      const input = document.getElementById(`inlineEditDeptInput-${idx}`);
+      const newName = (input?.value || "").trim();
+      if (!newName || newName === oldName) {
+        cancelInlineEditDept();
+        return;
+      }
+      await callAPI("updateDepartment", { oldDeptName: oldName, newDeptName: newName });
+      state.departments[idx] = newName;
+      editingDeptIndex = -1;
+      renderDeptManageList();
+      renderDepartmentDropdown();
+      showNotification(`แก้ไขชื่อแผนกเป็น "${newName}" เรียบร้อยแล้ว`, "success");
+    }
+
+    async function handleDeleteDepartment(deptName) {
+      await callAPI("deleteDepartment", { deptName });
+      state.departments = state.departments.filter(d => d !== deptName);
+      renderDeptManageList();
+      renderDepartmentDropdown();
+      showNotification(`ลบแผนก "${deptName}" เรียบร้อยแล้ว`, "info");
     }
 
     async function handleAddNewDepartment() {
@@ -2912,36 +3400,47 @@ function handleDeleteUserRole(data) {
       document.getElementById("editItemName").value = item.item_name;
       document.getElementById("editItemCategory").value = item.category;
       document.getElementById("editItemSerial").value = item.serial_number || "";
-      document.getElementById("editItemStatus").value = item.status === "Maintenance" ? "Maintenance" : "Available";
+      const statusSelect = document.getElementById("editItemStatus");
+      if (isItemBorrowed(item)) {
+        statusSelect.value = "Borrowed";
+        statusSelect.disabled = true;
+      } else {
+        statusSelect.disabled = false;
+        statusSelect.value = item.status === "Maintenance" ? "Maintenance" : "Available";
+      }
       document.getElementById("editItemModal").classList.remove("hidden");
     }
     function closeEditItemModal() { document.getElementById("editItemModal").classList.add("hidden"); }
 
     async function handleSaveItemEdit(e) {
       e.preventDefault();
-      const id = document.getElementById("editItemId").value;
-      const item = state.items.find(i => i.item_id === id);
-      if (item) {
-        item.item_name = document.getElementById("editItemName").value;
-        item.category = document.getElementById("editItemCategory").value;
-        item.serial_number = document.getElementById("editItemSerial").value;
-        item.status = document.getElementById("editItemStatus").value;
-      }
+      const payload = {
+        itemId: document.getElementById("editItemId").value,
+        itemName: document.getElementById("editItemName").value.trim(),
+        category: document.getElementById("editItemCategory").value.trim(),
+        serialNumber: document.getElementById("editItemSerial").value.trim(),
+        status: document.getElementById("editItemStatus").value
+      };
+      await callAPI("updateItem", payload);
       closeEditItemModal();
-      renderAll();
+      await refreshData();
       showNotification("บันทึกการแก้ไขอุปกรณ์เรียบร้อย", "success");
     }
 
     function openEditHistoryModal(transId) {
       const log = state.allLogs.find(l => l.trans_id === transId);
       if (!log) return;
+      const item = state.items.find(i => String(i.item_id).toLowerCase() === String(log.item_id).toLowerCase());
+      const itemName = item ? item.item_name : log.item_id;
+
       document.getElementById("editHistoryTransId").value = log.trans_id;
       document.getElementById("editHistoryTransLabel").innerText = `รหัส: ${log.trans_id}`;
-      document.getElementById("editHistoryBorrowerName").value = log.borrower_name;
-      document.getElementById("editHistoryDept").value = log.borrower_dept;
+      document.getElementById("editHistoryItemInfo").innerText = `[${log.item_id}] ${itemName}`;
+      document.getElementById("editHistoryBorrowerName").value = log.borrower_name || "";
+      document.getElementById("editHistoryDept").value = log.borrower_dept || "";
       document.getElementById("editHistoryContact").value = log.borrower_contact || "";
-      document.getElementById("editHistoryBorrowDate").value = log.borrow_date;
-      document.getElementById("editHistoryExpectedReturn").value = log.expected_return;
+      document.getElementById("editHistoryBorrowDate").value = log.borrow_date || "";
+      document.getElementById("editHistoryExpectedReturn").value = log.expected_return || "";
       document.getElementById("editHistoryActualReturn").value = log.actual_return || "";
       document.getElementById("editHistoryStatus").value = log.trans_status || "Borrowed";
       document.getElementById("editHistoryNotes").value = log.notes || "";
@@ -2954,14 +3453,14 @@ function handleDeleteUserRole(data) {
       const transId = document.getElementById("editHistoryTransId").value;
       const payload = {
         transId: transId,
-        borrowerName: document.getElementById("editHistoryBorrowerName").value,
-        borrowerDept: document.getElementById("editHistoryDept").value,
-        borrowerContact: document.getElementById("editHistoryContact").value,
+        borrowerName: document.getElementById("editHistoryBorrowerName").value.trim(),
+        borrowerDept: document.getElementById("editHistoryDept").value.trim(),
+        borrowerContact: document.getElementById("editHistoryContact").value.trim(),
         borrowDate: document.getElementById("editHistoryBorrowDate").value,
         expectedReturn: document.getElementById("editHistoryExpectedReturn").value,
-        actualReturn: document.getElementById("editHistoryActualReturn").value,
+        actualReturn: document.getElementById("editHistoryActualReturn").value.trim(),
         transStatus: document.getElementById("editHistoryStatus").value,
-        notes: document.getElementById("editHistoryNotes").value
+        notes: document.getElementById("editHistoryNotes").value.trim()
       };
       await callAPI("updateHistoryLog", payload);
       closeEditHistoryModal();
@@ -2975,17 +3474,40 @@ function handleDeleteUserRole(data) {
       if (status === "Borrowed") actualInput.value = "";
     }
 
+    function handleCategorySelectionChange(val) {
+      const customInput = document.getElementById("newItemCustomCategory");
+      if (!customInput) return;
+      if (val === "__custom__") {
+        customInput.classList.remove("hidden");
+        customInput.required = true;
+        customInput.focus();
+      } else {
+        customInput.classList.add("hidden");
+        customInput.required = false;
+        customInput.value = "";
+      }
+    }
+
     async function handleAddNewItem(e) {
       e.preventDefault();
+      const selectedCategory = document.getElementById("newItemCategory").value;
+      const customCategory = document.getElementById("newItemCustomCategory")?.value.trim();
+      const finalCategory = (selectedCategory === "__custom__" ? customCategory : selectedCategory) || "Other";
+
       const payload = {
         itemId: document.getElementById("newItemId").value.trim(),
         itemName: document.getElementById("newItemName").value.trim(),
-        category: document.getElementById("newItemCategory").value,
+        category: finalCategory,
         serialNumber: document.getElementById("newItemSerial").value.trim()
       };
-      await callAPI("addItem", payload);
+      const res = await callAPI("addItem", payload);
+      if (res.status === "error") {
+        showNotification(res.message, "error");
+        return;
+      }
       closeAddItemModal();
       document.getElementById("addItemForm").reset();
+      document.getElementById("newItemCustomCategory")?.classList.add("hidden");
       await refreshData();
       showNotification(`เพิ่มอุปกรณ์ [${payload.itemId}] สำเร็จ`, "success");
     }
@@ -3001,8 +3523,16 @@ function handleDeleteUserRole(data) {
     function renderCategoryDropdowns() {
       const s1 = document.getElementById("filterCategory");
       const s2 = document.getElementById("newItemCategory");
-      if (s1) s1.innerHTML = '<option value="">ทุกหมวดหมู่</option>' + state.categories.map(c => `<option value="${c}">${c}</option>`).join("");
-      if (s2) s2.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>' + state.categories.map(c => `<option value="${c}">${c}</option>`).join("");
+      if (s1) {
+        const cur1 = s1.value;
+        s1.innerHTML = '<option value="">ทุกหมวดหมู่</option>' + state.categories.map(c => `<option value="${c}" ${c === cur1 ? 'selected' : ''}>${c}</option>`).join("");
+      }
+      if (s2) {
+        const cur2 = s2.value;
+        s2.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>' +
+          state.categories.map(c => `<option value="${c}" ${c === cur2 ? 'selected' : ''}>${c}</option>`).join("") +
+          '<option value="__custom__">+ พิมพ์เพิ่มหมวดหมู่ใหม่...</option>';
+      }
     }
 
     function filterActiveBorrows() {
