@@ -1257,9 +1257,20 @@
           </div>
         </div>
 
+        <!-- Google OAuth Client ID Configuration -->
+        <div class="p-3 bg-sky-50 rounded-xl border border-sky-200 space-y-1.5">
+          <label class="block font-bold text-sky-950 mb-1">2. Google Client ID (สำหรับปุ่ม Sign in with Google จริง):</label>
+          <p class="text-[11px] text-sky-700">ได้จาก Google Cloud Console &gt; Credentials &gt; OAuth 2.0 Client IDs (Web application)</p>
+          <div class="flex gap-2">
+            <input type="text" id="inputGoogleClientId" placeholder="เช่น 123456789-xxxx.apps.googleusercontent.com" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white">
+            <button onclick="saveGoogleClientId()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold">บันทึก Client ID</button>
+          </div>
+          <p class="text-[10px] text-slate-500">หมายเหตุ: อย่าลืมใส่ <code>https://tatiphon.github.io</code> ในช่อง Authorized JavaScript origins บน Google Cloud Console</p>
+        </div>
+
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="font-bold text-slate-800">2. คัดลอกโค้ดเวอร์ชันล่าสุดนี้ไปวางใน Apps Script (Code.gs):</span>
+            <span class="font-bold text-slate-800">3. คัดลอกโค้ดเวอร์ชันล่าสุดนี้ไปวางใน Apps Script (Code.gs):</span>
             <button onclick="copyGasCode()" class="text-tcc-600 font-semibold hover:underline flex items-center gap-1">
               <span>คัดลอกโค้ดทั้งหมด</span>
             </button>
@@ -1294,11 +1305,23 @@
     /* =========================================================
      * APPLICATION STATE & CONFIGURATION (THAI CHAMBER OF COMMERCE)
      * ========================================================= */
+    // ---------------------------------------------------------------------------------
+    // 🔑 นำ Google Client ID ที่ได้จาก Google Cloud Console มาวางแทนที่ข้อความด้านล่างนี้:
+    // ตัวอย่าง: "123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com"
+    // ---------------------------------------------------------------------------------
+    const DEFAULT_GOOGLE_CLIENT_ID = "วาง_CLIENT_ID_ที่นี่";
+
     const STORAGE_KEY_URL = "it_asset_webapp_url";
     const STORAGE_KEY_USER = "it_asset_logged_user";
     const STORAGE_KEY_ROLES = "it_asset_custom_user_roles";
-    const GOOGLE_CLIENT_ID = "1048842183307-demo.apps.googleusercontent.com"; // Google Client ID placeholder
+    const STORAGE_KEY_CLIENT_ID = "it_asset_google_client_id";
     const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxEj-79eHal39qVlnENM2GxRTn5C1TVXYjE8IxehEKXokpOHh5VtfHCbuc7_PSr4xO0/exec";
+
+    // ตรวจสอบ Client ID: หากในโค้ดมีการเปลี่ยนเป็น Client ID จริง ให้ใช้ค่าจากโค้ดทันที
+    let storedClientId = localStorage.getItem(STORAGE_KEY_CLIENT_ID);
+    let currentGoogleClientId = (DEFAULT_GOOGLE_CLIENT_ID && DEFAULT_GOOGLE_CLIENT_ID !== "วาง_CLIENT_ID_ที่นี่")
+      ? DEFAULT_GOOGLE_CLIENT_ID
+      : (storedClientId || DEFAULT_GOOGLE_CLIENT_ID);
 
     // URL Storage fallback
     let storedUrl = localStorage.getItem(STORAGE_KEY_URL);
@@ -1684,14 +1707,25 @@
     function initGoogleSignIn() {
       if (typeof google !== "undefined" && google.accounts && google.accounts.id) {
         try {
+          const clientIdToUse = (DEFAULT_GOOGLE_CLIENT_ID && DEFAULT_GOOGLE_CLIENT_ID !== "วาง_CLIENT_ID_ที่นี่")
+            ? DEFAULT_GOOGLE_CLIENT_ID
+            : (currentGoogleClientId || DEFAULT_GOOGLE_CLIENT_ID);
+
+          // ตรวจสอบความพร้อมของ Client ID ป้องกัน Google API แจ้งเตือน Error กรณีที่ยังไม่ได้ใส่ค่าจริง
+          if (!clientIdToUse || clientIdToUse === "วาง_CLIENT_ID_ที่นี่" || clientIdToUse.includes("demo")) {
+            console.info("Google Client ID ยังไม่ได้ถูกระบุ (ระบบพร้อมใช้งานเมื่อใส่ Client ID จริง)");
+            return;
+          }
+
           google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
+            client_id: clientIdToUse,
             callback: handleGoogleCredentialResponse,
             auto_select: false
           });
 
           const target = document.getElementById("googleSignInButtonWrapper");
           if (target) {
+            target.innerHTML = "";
             google.accounts.id.renderButton(target, {
               theme: "outline",
               size: "large",
@@ -1703,6 +1737,7 @@
 
           const gateTarget = document.getElementById("googleGateButtonWrapper");
           if (gateTarget) {
+            gateTarget.innerHTML = "";
             google.accounts.id.renderButton(gateTarget, {
               theme: "outline",
               size: "large",
@@ -1715,6 +1750,19 @@
           console.debug("Google Identity Services notice:", e);
         }
       }
+    }
+
+    function saveGoogleClientId() {
+      const input = document.getElementById("inputGoogleClientId");
+      const val = (input?.value || "").trim();
+      if (!val) {
+        showNotification("กรุณากรอก Google Client ID ที่ได้จาก Google Cloud Console", "warning");
+        return;
+      }
+      currentGoogleClientId = val;
+      localStorage.setItem(STORAGE_KEY_CLIENT_ID, val);
+      initGoogleSignIn();
+      showNotification("บันทึก Google Client ID เรียบร้อยแล้ว ปุ่ม Google Sign-In พร้อมใช้งาน", "success");
     }
 
     function openLoginModal() {
@@ -3345,6 +3393,8 @@ function handleDeleteUserRole(data) {
     function openSetupModal() {
       const urlInput = document.getElementById("inputWebAppUrl");
       if (urlInput) urlInput.value = state.webAppUrl || "";
+      const clientIdInput = document.getElementById("inputGoogleClientId");
+      if (clientIdInput) clientIdInput.value = currentGoogleClientId || "";
       const codeBlock = document.getElementById("gasCodeBlock");
       if (codeBlock) codeBlock.textContent = SELF_HEALING_GAS_CODE;
       document.getElementById("setupModal").classList.remove("hidden");
